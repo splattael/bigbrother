@@ -1,0 +1,20 @@
+check_every: 300
+
+notifiers:
+  - type: "console"
+    colorize: true
+  #- type: "telegram"
+  #  name: MyBot
+  #  token: BOT_TOKEN
+  #  chat_id: CHAT_ID (mostly bot id)
+
+checks:
+  - type: "http"
+    url: https://www.facebook.com
+    match_body: Facebook
+  - type: "host_ip"
+    host: www.google.com
+    port: 80
+  - type: "http"
+    url: https://google.com
+    status_code: 302
