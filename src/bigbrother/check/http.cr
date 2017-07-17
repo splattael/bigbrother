@@ -18,7 +18,7 @@ module Bigbrother
           default: 200,
         }
 
-      def target
+      def label
         @url
       end
 

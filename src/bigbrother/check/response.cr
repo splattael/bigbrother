@@ -32,7 +32,7 @@ module Bigbrother
             string << "FAIL".colorize.red.toggle(colorize)
           end
 
-          string << "[#{type}]=#{check.target.colorize.mode(:bold).toggle(colorize)}"
+          string << "[#{type}]=#{check.label.colorize.mode(:bold).toggle(colorize)}"
           string << ", duration=#{duration}"
 
           if error?

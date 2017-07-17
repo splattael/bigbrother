@@ -3,7 +3,7 @@ module Bigbrother
     property app : Bigbrother::App?
 
     abstract def check
-    abstract def target
+    abstract def label : String
 
     def start(app : App)
       @app = app
