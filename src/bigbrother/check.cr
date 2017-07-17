@@ -14,25 +14,6 @@ module Bigbrother
       end
     end
 
-    TYPES = [] of Class
-
-    macro included
-      {% TYPES << @type %}
-
-      # TODO check name with YAML's `type:`
-      macro config(_name, **properties)
-        YAML.mapping(\{{**properties}})
-      end
-    end
-
-    macro finished
-      {% if TYPES.empty? %}
-        {% raise "Please define at least one check" %}
-      {% end %}
-
-      alias Types = Array(Union({{ *TYPES }}))
-    end
-
     def run
       start = Time.now
       begin
@@ -40,6 +21,44 @@ module Bigbrother
         Response.new(self, Time.now - start, nil)
       rescue e
         Response.new(self, Time.now - start, e)
+      end
+    end
+
+    ## configurable
+    # TODO unite
+
+    TYPES = [] of Class
+
+    macro included
+      macro config(type, **properties)
+        \{% TYPES << @type %}
+
+        def {{@type}}.type
+          \{{ type }}
+        end
+
+        \{% properties[:type] = String %}
+        YAML.mapping(\{{**properties}})
+      end
+    end
+
+    macro finished
+      def self.new(pull : YAML::PullParser)
+        string = pull.read_raw
+        {% for type in TYPES %}
+          begin
+            config = {{type}}.from_yaml(string)
+            if {{type}}.type != config.type
+              raise "Unmatched attribute type for {{type}}:\n" +
+                    "  Expected: #{{{type}}.type.inspect}\n" +
+                    "    Actual: #{config.type.inspect}"
+            end
+            return config
+          rescue YAML::ParseException
+            # Ignore
+          end
+        {% end %}
+        raise YAML::ParseException.new("Couldn't parse #{self} from #{string}", 0, 0)
       end
     end
   end

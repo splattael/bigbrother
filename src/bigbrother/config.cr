@@ -4,8 +4,8 @@ module Bigbrother
   class Config
     YAML.mapping(
       check_every: Int32,
-      notifiers: Notifier::Types,
-      checks: Check::Types
+      notifiers: Array(Notifier),
+      checks: Array(Check)
     )
   end
 end
