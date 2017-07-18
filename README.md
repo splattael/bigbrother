@@ -2,6 +2,10 @@
 
 Server overseer.
 
+`bigbrother` runs predefined checks (e.g. HTTP, TCP) every `n` seconds and notifies (via e.g. Telegram) you if any these checks fail.
+
+See `config.yml.sample` for some example checks.
+
 ## Installation
 
     make build-release
