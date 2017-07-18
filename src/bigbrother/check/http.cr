@@ -25,10 +25,10 @@ module Bigbrother
       def check
         response = HTTP::Client.get @url
         unless @status_code == response.status_code
-          raise Failure.new("status_code=#{response.status_code}")
+          fail "status_code=#{response.status_code}"
         end
         unless @match_body.not_nil!.match(response.body.to_s)
-          raise Failure.new("match_body=#{response.body}")
+          fail "match_body=#{response.body}"
         end
       end
     end

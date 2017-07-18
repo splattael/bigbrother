@@ -1,3 +1,6 @@
+require "./check/failure"
+require "./check/response"
+
 module Bigbrother
   module Check
     property app : Bigbrother::App?
@@ -9,11 +12,6 @@ module Bigbrother
       @app = app
     end
 
-    class Failure < Exception
-      def initialize(@message : String)
-      end
-    end
-
     def run
       start = Time.now
       begin
@@ -22,6 +20,10 @@ module Bigbrother
       rescue e
         Response.new(self, Time.now - start, e)
       end
+    end
+
+    protected def fail(message)
+      raise Failure.new(message)
     end
 
     ## configurable
