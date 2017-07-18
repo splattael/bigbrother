@@ -11,7 +11,9 @@ module Bigbrother
       config "telegram",
         name: String,
         token: String,
-        chat_id: Int32
+        chat_id: Int32,
+        whitelist: Array(String)?,
+        blacklist: Array(String)?
 
       def notify(response, only_errors)
         if !only_errors || response.error?
@@ -50,7 +52,12 @@ module Bigbrother
         include TelegramBot::CmdHandler
 
         def initialize(@config : Telegram, @app : App)
-          super(@config.name, @config.token)
+          super(
+            name: @config.name,
+            token: @config.token,
+            whitelist: @config.whitelist,
+            blacklist: @config.blacklist
+          )
 
           cmd "check" do |msg|
             @app.not_nil!.run_checks(only_errors: false)

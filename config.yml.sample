@@ -7,6 +7,12 @@ notifiers:
   #  name: MyBot
   #  token: BOT_TOKEN
   #  chat_id: CHAT_ID (mostly bot id)
+  #  whitelist: # optional
+  #    - my_username
+  #    - friend_of_mine
+  #  blacklist: # optional
+  #    - bad_user
+  #    - another_bad_user
 
 checks:
   - type: "http"
