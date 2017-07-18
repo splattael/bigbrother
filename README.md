@@ -2,9 +2,23 @@
 
 Server overseer.
 
-`bigbrother` runs predefined checks (e.g. HTTP, TCP) every `n` seconds and notifies (via e.g. Telegram) you if any these checks fail.
+`bigbrother` runs predefined checks (e.g. HTTP, TCP) every `n` seconds and notifies (via e.g. Telegram) you if any of these checks fail.
 
 See `config.yml.sample` for some example checks.
+
+## Checks
+
+Currently, the following checks are implemented:
+
+* [http](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/check/http.cr) - Check a URL for specific for its HTTP status code or content.
+* [host_ip](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/check/host_ip.cr) - Check a host and ip via TCP.
+
+## Notifiers
+
+A list of available notifiers:
+
+* [telegram](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/notifier/telegram.cr) - Notify via Telegram's bot.
+* [console](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/notifier/console.cr) - Print all checks on your terminal.
 
 ## Installation
 
