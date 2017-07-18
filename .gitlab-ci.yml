@@ -1,0 +1,13 @@
+image: crystallang/crystal:0.23.0
+
+stages:
+  - release
+
+release:
+  stage: release
+  artifacts:
+    paths:
+      - bin
+    expire_in: 2 days
+  script:
+    - make build-release
