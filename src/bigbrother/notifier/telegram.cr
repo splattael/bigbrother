@@ -37,7 +37,7 @@ module Bigbrother
           string << response.type
           string << " "
           string << response.label
-          string << ", duration=#{response.duration.milliseconds}ms"
+          string << ", duration=#{response.duration.total_milliseconds}ms"
 
           if response.error?
             error = HTML.escape(response.exception.inspect)
