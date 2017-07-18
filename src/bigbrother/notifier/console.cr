@@ -4,7 +4,6 @@ module Bigbrother
       include Notifier
 
       config "console",
-        # type: "console",
         colorize: Bool
 
       def notify(response, only_errors)

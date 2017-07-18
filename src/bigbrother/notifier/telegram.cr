@@ -8,7 +8,6 @@ module Bigbrother
       @bot : Bot?
 
       config "telegram",
-        # type: "telegram",
         name: String,
         token: String,
         chat_id: Int32
