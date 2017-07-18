@@ -1,3 +1,5 @@
+require "colorize"
+
 module Bigbrother
   module Notifier
     class Console
@@ -7,9 +9,29 @@ module Bigbrother
         colorize: Bool
 
       def notify(response, only_errors)
-        message = response.as_string(@colorize)
-        time = Time.now.to_s
-        puts "[#{time}] #{message}"
+        puts present_response(response, @colorize)
+      end
+
+      private def present_response(response, colorize)
+        String.build do |string|
+          string << "[#{Time.now}] "
+
+          if response.ok?
+            string << "OK".colorize.green.toggle(colorize)
+          else
+            string << "FAIL".colorize.red.toggle(colorize)
+          end
+
+          string << " "
+          string << response.type
+          string << " "
+          string << response.label.colorize.mode(:bold).toggle(colorize)
+          string << ", duration=#{response.duration.milliseconds}ms"
+
+          if response.error?
+            string << ", exception=#{response.exception}"
+          end
+        end
       end
     end
   end

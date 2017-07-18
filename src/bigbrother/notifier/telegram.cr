@@ -1,4 +1,5 @@
 require "telegram_bot"
+require "html"
 
 module Bigbrother
   module Notifier
@@ -14,7 +15,7 @@ module Bigbrother
 
       def notify(response, only_errors)
         if !only_errors || response.error?
-          message = response.as_string(false)
+          message = present_response(response)
           @bot.not_nil!.notify(message)
         end
       end
@@ -22,6 +23,27 @@ module Bigbrother
       def start(app)
         super(app)
         @bot = Bot.new(self, app)
+      end
+
+      private def present_response(response)
+        String.build do |string|
+          if response.ok?
+            string << "<i>OK</i>"
+          else
+            string << "<b>FAIL</b>"
+          end
+
+          string << " "
+          string << response.type
+          string << " "
+          string << response.label
+          string << ", duration=#{response.duration.milliseconds}ms"
+
+          if response.error?
+            error = HTML.escape(response.exception.inspect)
+            string << "\n<pre>#{error}</pre>"
+          end
+        end
       end
 
       class Bot < TelegramBot::Bot
@@ -40,7 +62,7 @@ module Bigbrother
         end
 
         def notify(message)
-          send_message @config.chat_id, message
+          send_message @config.chat_id, message, parse_mode: "HTML"
         end
       end
     end

@@ -1,5 +1,3 @@
-require "colorize"
-
 module Bigbrother
   module Check
     class Response
@@ -8,6 +6,14 @@ module Bigbrother
       getter exception
 
       def initialize(@check : Check, @duration : Time::Span, @exception : Exception?)
+      end
+
+      def type
+        @check.type
+      end
+
+      def label
+        @check.label
       end
 
       def error
@@ -20,25 +26,6 @@ module Bigbrother
 
       def ok?
         error.nil?
-      end
-
-      def as_string(colorize = true)
-        type = check.class.to_s.gsub(/Bigbrother::Check::/, "")
-
-        String.build do |string|
-          if ok?
-            string << "OK".colorize.green.toggle(colorize)
-          else
-            string << "FAIL".colorize.red.toggle(colorize)
-          end
-
-          string << "[#{type}]=#{check.label.colorize.mode(:bold).toggle(colorize)}"
-          string << ", duration=#{duration}"
-
-          if error?
-            string << ", exception=#{@exception}"
-          end
-        end
       end
     end
   end
