@@ -3,7 +3,7 @@ require "html"
 
 module Bigbrother
   module Notifier
-    class Telegram < TelegramBot::Bot
+    class Telegram
       include Notifier
 
       @bot : Bot?
