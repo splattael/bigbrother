@@ -6,6 +6,11 @@ Server overseer.
 
 See `config.yml.sample` for some example checks.
 
+## Screenshots
+
+![console](https://github.com/splattael/bigbrother/blob/master/assets/bigbrother.console.png)
+![telegram](https://github.com/splattael/bigbrother/blob/master/assets/bigbrother.telegram.png)
+
 ## Checks
 
 Currently, the following checks are implemented:
