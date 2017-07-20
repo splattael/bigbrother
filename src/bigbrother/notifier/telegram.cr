@@ -13,7 +13,15 @@ module Bigbrother
         token: String,
         chat_id: Int32,
         whitelist: Array(String)?,
-        blacklist: Array(String)?
+        blacklist: Array(String)?,
+        webhook: Webhook?
+
+      config Webhook,
+        url: String,
+        listen: String?,
+        port: Int32?,
+        ssl_certificate_path: String?,
+        ssl_key_path: String?
 
       def notify(response, only_errors)
         if !only_errors || response.error?
@@ -63,13 +71,30 @@ module Bigbrother
             @app.not_nil!.run_checks(only_errors: false)
           end
 
-          spawn do
-            polling
+          if webhook = @config.webhook
+            spawn serve_webhook(webhook)
+          else
+            spawn start_polling
           end
         end
 
         def notify(message)
           send_message @config.chat_id, message, parse_mode: "HTML"
+        end
+
+        private def serve_webhook(config)
+          set_webhook(config.url, config.ssl_certificate_path)
+          serve(
+            bind_address: config.listen || "127.0.0.1",
+            bind_port: config.port || 80,
+            ssl_certificate_path: config.ssl_certificate_path,
+            ssl_key_path: config.ssl_key_path
+          )
+        end
+
+        private def start_polling
+          set_webhook("") # Disable webhook
+          polling
         end
       end
     end

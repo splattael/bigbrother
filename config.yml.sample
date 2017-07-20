@@ -13,6 +13,11 @@ notifiers:
   #  blacklist: # optional
   #    - bad_user
   #    - another_bad_user
+  #  webhook:
+  #    url: "https://my_host/bigbrother"
+  #    port: 3333
+  #    # ssl_certificate_path: "path/to/cert.pem"
+  #    # ssl_key_path: "path/to/private_key.key"
 
 checks:
   - type: "http"

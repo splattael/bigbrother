@@ -15,14 +15,22 @@ module Bigbrother
 
     macro included
       macro config(type, **properties)
-        \{% TYPES << @type %}
+        \{% if type.is_a?(StringLiteral) %}
+          \{% TYPES << @type %}
 
-        def {{@type}}.type
-          \{{ type }}
-        end
+          def {{@type}}.type
+            \{{ type }}
+          end
 
-        \{% properties[:type] = String %}
-        YAML.mapping(\{{**properties}})
+          \{% properties[:type] = String %}
+          YAML.mapping(\{{**properties}})
+        \{% elsif type.is_a?(Path) %}
+          class \{{ type }}
+            YAML.mapping(\{{**properties}})
+          end
+        \{% else %}
+           \{% raise "unknown config type. Allowed: StringLiteral, Path." %}
+        \{% end %}
       end
     end
 
