@@ -1,0 +1,35 @@
+#!/bin/sh
+
+set -e
+
+# Check is required variables
+: ${IMAGE_NAME:?Enviroment variable is missing}
+
+# Optional variables
+DOCKERFILE=${DOCKERFILE:-Dockerfile}
+MASTER_BRANCH=${MASTER_BRANCH:-master}
+IMAGE_TAG=${IMAGE_TAG:-latest}
+__IMAGE_TAG_SUFFIX=$([ "$CI_BUILD_REF_NAME" = "$MASTER_BRANCH" -o "$CI_BUILD_REF_NAME" = "" ] && echo "" || echo "-$CI_BUILD_REF_NAME")
+
+IMAGE_TAG_SUFFIX=$([ -z ${IMAGE_TAG_SUFFIX+unset} ] && echo $__IMAGE_TAG_SUFFIX || echo "")
+
+__IMAGE__=${IMAGE_NAME}:${IMAGE_TAG}${IMAGE_TAG_SUFFIX}
+
+BUILD_ARGS=""
+
+for varname in $*; do
+  value=$(eval echo \$$varname)
+  BUILD_ARGS="$BUILD_ARGS --build-arg $varname=$value"
+done
+
+docker build --pull ${BUILD_ARGS} -f ${DOCKERFILE} -t ${__IMAGE__} .
+
+# push
+docker push ${__IMAGE__}
+
+# tag aliases
+for tag_alias in $IMAGE_TAG_ALIASES; do
+  image=${IMAGE_NAME}:${tag_alias}${IMAGE_TAG_SUFFIX}
+  docker tag ${__IMAGE__} $image
+  docker push $image
+done

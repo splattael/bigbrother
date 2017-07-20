@@ -1,9 +1,9 @@
-image: crystallang/crystal:0.23.0
-
 stages:
   - release
+  - deploy
 
 release:
+  image: crystallang/crystal:0.23.0
   stage: release
   artifacts:
     paths:
@@ -11,3 +11,16 @@ release:
     expire_in: 2 days
   script:
     - make build-release
+
+.build_and_push: &build_and_push
+  image: docker:dind
+  stage: deploy
+  dependencies:
+    - release
+  script:
+    - export IMAGE_TAG=$CI_COMMIT_SHA
+    - ci/build_and_push
+
+deploy:
+  # Set secure variable IMAGE_NAME
+  <<: *build_and_push
