@@ -8,6 +8,8 @@ module Bigbrother
       @checks = define_checks(@config.checks)
       @notifiers.each(&.start(self))
       @checks.each(&.start(self))
+
+      register_signal_handlers
     end
 
     def run
@@ -40,6 +42,19 @@ module Bigbrother
 
     private def define_checks(checks)
       checks.map(&.as(Check))
+    end
+
+    private def register_signal_handlers
+      handle_signal(Signal::INT, Signal::TERM, message: "Exit") { exit 1 }
+    end
+
+    private def handle_signal(*signals, message, &block)
+      signals.each do |signal|
+        signal.trap do
+          puts "Caught signal #{signal} -> #{message}"
+          block.call
+        end
+      end
     end
   end
 end
