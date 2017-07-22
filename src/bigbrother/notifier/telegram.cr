@@ -67,6 +67,11 @@ module Bigbrother
             blacklist: @config.blacklist
           )
 
+          cmd "help" do |msg|
+            notify "/check"
+            notify "/check LABEL (example <code>/check .com</code>)"
+          end
+
           cmd "check" do |msg, params|
             match_label = params[0]? ? Regex.new(params[0]) : /.*/
             @app.not_nil!.run_checks(only_errors: false,
