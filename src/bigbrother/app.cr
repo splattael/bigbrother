@@ -19,10 +19,10 @@ module Bigbrother
       end
     end
 
-    def run_checks(only_errors = true)
-      @checks.each do |check|
-        run_check(check, only_errors)
-      end
+    def run_checks(only_errors = true, match_label = /.*/)
+      @checks
+        .select { |check| match_label.match check.label }
+        .each { |check| run_check(check, only_errors) }
     end
 
     private def run_check(check, only_errors)

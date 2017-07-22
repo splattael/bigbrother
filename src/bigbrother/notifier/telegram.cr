@@ -67,8 +67,10 @@ module Bigbrother
             blacklist: @config.blacklist
           )
 
-          cmd "check" do |msg|
-            @app.not_nil!.run_checks(only_errors: false)
+          cmd "check" do |msg, params|
+            match_label = params[0]? ? Regex.new(params[0]) : /.*/
+            @app.not_nil!.run_checks(only_errors: false,
+                                     match_label: match_label)
           end
 
           if webhook = @config.webhook
