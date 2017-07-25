@@ -16,6 +16,21 @@ module Bigbrother
           type:    Int32,
           nilable: true,
           default: 200,
+        },
+        dns_timeout: {
+          type: Int32,
+          nilable: true,
+          default: 10
+        },
+        connect_timeout: {
+          type: Int32,
+          nilable: true,
+          default: 120
+        },
+        read_timeout: {
+          type: Int32,
+          nilable: true,
+          default: 120
         }
 
       def label
@@ -23,12 +38,22 @@ module Bigbrother
       end
 
       def check
-        response = HTTP::Client.get @url
-        unless @status_code == response.status_code
-          fail "status_code=#{response.status_code}"
-        end
-        unless @match_body.not_nil!.match(response.body.to_s)
-          fail "match_body=#{response.body}"
+        uri = URI.parse(@url)
+        uri = URI.parse("http://#{@url}") unless uri.scheme
+
+        HTTP::Client.new(uri) do |client|
+          client.dns_timeout = @dns_timeout.not_nil!
+          client.connect_timeout = @connect_timeout.not_nil!
+          client.read_timeout = @read_timeout.not_nil!
+
+          response = client.get(uri.full_path)
+
+          unless @status_code == response.status_code
+            fail "status_code=#{response.status_code}"
+          end
+          unless @match_body.not_nil!.match(response.body.to_s)
+            fail "match_body=#{response.body}"
+          end
         end
       end
     end

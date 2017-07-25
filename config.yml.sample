@@ -23,6 +23,9 @@ checks:
   - type: "http"
     url: https://www.facebook.com
     match_body: Facebook
+    # dns_timeout: 10
+    # connect_timeout: 120
+    # read_timeout: 120
   - type: "host_ip"
     host: www.google.com
     port: 80
