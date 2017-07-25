@@ -11,7 +11,7 @@ module Bigbrother
       config "telegram",
         name: String,
         token: String,
-        chat_id: Int32,
+        chat_id: Int32 | String,
         whitelist: Array(String)?,
         blacklist: Array(String)?,
         webhook: Webhook?
@@ -70,12 +70,17 @@ module Bigbrother
           cmd "help" do |msg|
             notify "/check"
             notify "/check LABEL (example <code>/check .com</code>)"
+            notify "/chat_id"
           end
 
           cmd "check" do |msg, params|
             match_label = params[0]? ? Regex.new(params[0]) : /.*/
             @app.not_nil!.run_checks(only_errors: false,
                                      match_label: match_label)
+          end
+
+          cmd "chat_id" do |msg|
+            notify "Chat ID: #{msg.chat.id}"
           end
 
           if webhook = @config.webhook
