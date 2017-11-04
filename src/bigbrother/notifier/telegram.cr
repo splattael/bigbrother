@@ -71,6 +71,7 @@ module Bigbrother
             notify "/check"
             notify "/check LABEL (example <code>/check .com</code>)"
             notify "/chat_id"
+            notify "/version"
           end
 
           cmd "check" do |msg, params|
@@ -81,6 +82,10 @@ module Bigbrother
 
           cmd "chat_id" do |msg|
             notify "Chat ID: #{msg.chat.id}"
+          end
+
+          cmd "version" do |msg|
+            notify Bigbrother::Cli.version
           end
 
           if webhook = @config.webhook
