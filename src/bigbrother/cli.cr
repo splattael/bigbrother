@@ -8,6 +8,7 @@ module Bigbrother
   module Cli
     def self.run(argv)
       config_file = nil
+      webhook_port = 0
 
       parser = OptionParser.parse(argv) do |parser|
         parser.banner = "Usage: bigbrother -c config.yml [arguments]"
@@ -18,6 +19,9 @@ module Bigbrother
         parser.on("-c YAML", "--config=YAML", "Provide config file") do |name|
           config_file = name
         end
+        parser.on("-p", "--port=PORT", "Provide webhook port used by heroku.") do |port|
+          webhook_port = port.to_i
+        end
         parser.on("-h", "--help", "Show help") do
           abort parser.to_s
         end
@@ -27,6 +31,10 @@ module Bigbrother
 
       unless config
         abort parser.to_s
+      end
+
+      if webhook_port > 0
+        configure_port(config, webhook_port)
       end
 
       app = App.new(config.not_nil!)
@@ -40,6 +48,20 @@ module Bigbrother
       elsif yaml_string
         Config.from_yaml(Base64.decode_string(yaml_string))
       end
+    end
+
+    private def self.configure_port(config : Config, port)
+      config.notifiers.each { |notifier| configure_port(notifier, port) }
+    end
+
+    private def self.configure_port(config : Notifier::Telegram, port)
+      if webhook = config.webhook
+        webhook.port = port
+      end
+    end
+
+    private def self.configure_port(config : Notifier, port)
+      # fallback
     end
 
     def self.version
