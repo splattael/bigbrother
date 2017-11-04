@@ -18,19 +18,19 @@ module Bigbrother
           default: 200,
         },
         dns_timeout: {
-          type: Int32,
+          type:    Int32,
           nilable: true,
-          default: 10
+          default: 10,
         },
         connect_timeout: {
-          type: Int32,
+          type:    Int32,
           nilable: true,
-          default: 120
+          default: 120,
         },
         read_timeout: {
-          type: Int32,
+          type:    Int32,
           nilable: true,
-          default: 120
+          default: 120,
         }
 
       def label

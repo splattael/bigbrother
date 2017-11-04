@@ -26,7 +26,7 @@ module Bigbrother
       raise Failure.new(message)
     end
 
-    ## configurable
+    # # configurable
     # TODO unite
 
     TYPES = [] of Class

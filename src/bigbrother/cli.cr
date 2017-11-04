@@ -34,11 +34,11 @@ module Bigbrother
 
     def self.version
       "%{name} %{version} [%{sha1}] (%{date}) Crystal %{cr_version}" % {
-        name: "bigbrother",
-        version: VERSION,
-        sha1: VERSION_SHA1,
-        date: VERSION_DATE,
-        cr_version: Crystal::VERSION
+        name:       "bigbrother",
+        version:    VERSION,
+        sha1:       VERSION_SHA1,
+        date:       VERSION_DATE,
+        cr_version: Crystal::VERSION,
       }
     end
 

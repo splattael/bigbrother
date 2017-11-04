@@ -29,7 +29,7 @@ module Bigbrother
         .each { |check| run_check(check, only_errors) }
     end
 
-    private def sleep_interruptable(seconds, resolution=1.0)
+    private def sleep_interruptable(seconds, resolution = 1.0)
       while seconds > 0
         break if yield
         seconds -= resolution

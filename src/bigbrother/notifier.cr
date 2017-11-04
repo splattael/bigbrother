@@ -8,7 +8,7 @@ module Bigbrother
 
     abstract def notify(response : Check::Response, only_errors : Bool)
 
-    ## configurable
+    # # configurable
     # TODO unite
 
     TYPES = [] of Class
