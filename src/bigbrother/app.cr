@@ -8,21 +8,33 @@ module Bigbrother
       @checks = define_checks(@config.checks)
       @notifiers.each(&.start(self))
       @checks.each(&.start(self))
-
-      register_signal_handlers
+      @stopped = false
     end
 
     def run
       loop do
         run_checks
-        sleep @config.check_every
+        sleep_interruptable(@config.check_every) { @stopped }
+        break if @stopped
       end
+    end
+
+    def stop
+      @stopped = true
     end
 
     def run_checks(only_errors = true, match_label = /.*/)
       @checks
         .select { |check| match_label.match check.label }
         .each { |check| run_check(check, only_errors) }
+    end
+
+    private def sleep_interruptable(seconds, resolution=1.0)
+      while seconds > 0
+        break if yield
+        seconds -= resolution
+        sleep resolution
+      end
     end
 
     private def run_check(check, only_errors)
@@ -42,19 +54,6 @@ module Bigbrother
 
     private def define_checks(checks)
       checks.map(&.as(Check))
-    end
-
-    private def register_signal_handlers
-      handle_signal(Signal::INT, Signal::TERM, message: "Exit") { exit 1 }
-    end
-
-    private def handle_signal(*signals, message, &block)
-      signals.each do |signal|
-        signal.trap do
-          puts "Caught signal #{signal} -> #{message}"
-          block.call
-        end
-      end
     end
   end
 end
