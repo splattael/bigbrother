@@ -1,5 +1,6 @@
 require "option_parser"
 require "yaml"
+require "base64"
 
 require "./version"
 
@@ -22,14 +23,23 @@ module Bigbrother
         end
       end
 
-      unless config_file
+      config = read_config(config_file, ENV["BB_CONFIG_YAML_BASE64"]?)
+
+      unless config
         abort parser.to_s
       end
 
-      config = Config.from_yaml(File.read(config_file.not_nil!))
-      app = App.new(config)
+      app = App.new(config.not_nil!)
       register_signal_handlers(app)
       app.run
+    end
+
+    private def self.read_config(config_file, yaml_string)
+      if config_file && File.exists?(config_file)
+        Config.from_yaml(File.read(config_file))
+      elsif yaml_string
+        Config.from_yaml(Base64.decode_string(yaml_string))
+      end
     end
 
     def self.version
