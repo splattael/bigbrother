@@ -52,7 +52,7 @@ module Bigbrother
             fail "status_code=#{response.status_code}"
           end
           unless @match_body.not_nil!.match(response.body.to_s)
-            fail "match_body=#{response.body}"
+            fail "match_body=#{response.body[0, 500]}"
           end
         end
       end
