@@ -3,7 +3,7 @@ stages:
   - deploy
 
 release:
-  image: crystallang/crystal:0.24.1
+  image: jhass/crystal-build-x86_64:0.24.1
   stage: release
   artifacts:
     paths:
@@ -12,15 +12,31 @@ release:
   script:
     - make build-release
 
-.build_and_push: &build_and_push
-  image: docker:dind
+deploy:
   stage: deploy
+  image: docker:dind
   dependencies:
     - release
   script:
     - export IMAGE_TAG=${CI_COMMIT_SHA:0:7}
+    - export IMAGE_TAG_ALIASES=${IMAGE_TAG}-x86_64
     - ci/build_and_push
 
-deploy:
-  # Set secure variable IMAGE_NAME
-  <<: *build_and_push
+release i386:
+  image: jhass/crystal-build-i386:0.24.1
+  stage: release
+  artifacts:
+    paths:
+      - bin
+    expire_in: 2 days
+  script:
+    - make build-release
+
+deploy i386:
+  stage: deploy
+  image: docker:dind
+  dependencies:
+    - release i386
+  script:
+    - export IMAGE_TAG=${CI_COMMIT_SHA:0:7}-i386
+    - ci/build_and_push
