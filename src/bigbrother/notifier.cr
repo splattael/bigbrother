@@ -35,11 +35,10 @@ module Bigbrother
     end
 
     macro finished
-      def self.new(pull : YAML::PullParser)
-        string = pull.read_raw
+      def self.new(ctx : YAML::ParseContext, node : YAML::Nodes::Node)
         {% for type in TYPES %}
           begin
-            config = {{type}}.from_yaml(string)
+            config = {{type}}.new(ctx, node)
             if {{type}}.type != config.type
               raise "Unmatched attribute type for {{type}}:\n" +
                     "  Expected: #{{{type}}.type.inspect}\n" +
@@ -50,7 +49,7 @@ module Bigbrother
             # Ignore
           end
         {% end %}
-        raise YAML::ParseException.new("Couldn't parse #{self} from #{string}", 0, 0)
+        node.raise "Cound't parse #{self}"
       end
     end
   end

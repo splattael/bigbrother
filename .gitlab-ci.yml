@@ -3,7 +3,7 @@ stages:
   - deploy
 
 release:
-  image: crystallang/crystal:0.23.1
+  image: crystallang/crystal:0.24.1
   stage: release
   artifacts:
     paths:
