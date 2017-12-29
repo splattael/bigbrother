@@ -23,9 +23,23 @@ checks:
   - type: "http"
     url: https://www.facebook.com
     match_body: Facebook
+
+    # method: "GET" # "POST" | "GET" | ...
+
+    # body: nil
+    # OR
+    # body: '{"some":"payload"}'
+    # body:
+    #   key: "value"
+    #   key2: "value2"
+
+    # headers:
+    #   Content-Type: "application/x-www-form-urlencoded"
+
     # dns_timeout: 10
     # connect_timeout: 120
     # read_timeout: 120
+
   - type: "host_ip"
     host: www.google.com
     port: 80
