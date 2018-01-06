@@ -40,7 +40,10 @@ module Bigbrother
         end
 
         \{% properties[:type] = String %}
-        YAML.mapping(\{{**properties}})
+        YAML.mapping(
+          retries: Int32?,
+          \{{**properties}}
+        )
       end
     end
 

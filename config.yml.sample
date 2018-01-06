@@ -1,4 +1,5 @@
 check_every: 300
+# retries: 0
 
 notifiers:
   - type: "console"
@@ -21,6 +22,7 @@ notifiers:
 
 checks:
   - type: "http"
+    # retries: nil (defaults to main config's `retries` above)
     url: https://www.facebook.com
     match_body: Facebook
 

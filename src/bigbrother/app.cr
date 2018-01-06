@@ -39,8 +39,21 @@ module Bigbrother
 
     private def run_check(check, only_errors)
       spawn do
-        response = check.run
+        response = execute_check(check)
         notify(response, only_errors)
+      end
+    end
+
+    private def execute_check(check)
+      retries = check.retries || @config.retries
+      loop do
+        response = check.run
+        if response.error? && retries > 0
+          retries -= 1
+        else
+          return response
+        end
+        sleep 0.5
       end
     end
 
