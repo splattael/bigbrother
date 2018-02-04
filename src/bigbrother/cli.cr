@@ -5,7 +5,46 @@ require "base64"
 require "./version"
 
 module Bigbrother
-  module Cli
+  class Cli
+    enum Status
+      Run
+      Reload
+      Stop
+    end
+
+    @config_file : String?
+    @webhook_port : Int32 = 0
+    @parser : OptionParser
+    @status : Status = Status::Run
+
+    def initialize(@config_file, @webhook_port, @parser)
+    end
+
+    def run
+      while @status != Status::Stop
+        start_app
+      end
+    end
+
+    private def start_app
+      config = read_config(@config_file, ENV["BB_CONFIG_YAML_BASE64"]?)
+
+      unless config
+        message = "Unable to read or parse config\n\n" + @parser.to_s
+        abort message
+      end
+
+      if @webhook_port > 0
+        configure_port(config, @webhook_port)
+      end
+
+      @status = Status::Run
+
+      app = App.new(config.not_nil!)
+      register_signal_handlers(app)
+      app.run
+    end
+
     def self.run(argv)
       config_file = nil
       webhook_port = 0
@@ -27,22 +66,11 @@ module Bigbrother
         end
       end
 
-      config = read_config(config_file, ENV["BB_CONFIG_YAML_BASE64"]?)
-
-      unless config
-        abort parser.to_s
-      end
-
-      if webhook_port > 0
-        configure_port(config, webhook_port)
-      end
-
-      app = App.new(config.not_nil!)
-      register_signal_handlers(app)
-      app.run
+      cli = new(config_file, webhook_port, parser)
+      cli.run
     end
 
-    private def self.read_config(config_file, yaml_string)
+    private def read_config(config_file, yaml_string)
       if config_file && File.exists?(config_file)
         Config.from_yaml(File.read(config_file))
       elsif yaml_string
@@ -50,17 +78,17 @@ module Bigbrother
       end
     end
 
-    private def self.configure_port(config : Config, port)
+    private def configure_port(config : Config, port)
       config.notifiers.each { |notifier| configure_port(notifier, port) }
     end
 
-    private def self.configure_port(config : Notifier::Telegram, port)
+    private def configure_port(config : Notifier::Telegram, port)
       if webhook = config.webhook
         webhook.port = port
       end
     end
 
-    private def self.configure_port(config : Notifier, port)
+    private def configure_port(config : Notifier, port)
       # fallback
     end
 
@@ -74,11 +102,22 @@ module Bigbrother
       }
     end
 
-    private def self.register_signal_handlers(app)
-      handle_signal(Signal::INT, Signal::TERM, message: "Exit") { app.stop }
+    private def register_signal_handlers(app)
+      handle_signal(Signal::INT, Signal::TERM, message: "Exit") { stop!(app) }
+      handle_signal(Signal::HUP, message: "Reloading config") { reload!(app) }
     end
 
-    private def self.handle_signal(*signals, message, &block)
+    private def stop!(app)
+      @status = Status::Stop
+      app.stop
+    end
+
+    private def reload!(app)
+      @status = Status::Reload
+      app.stop
+    end
+
+    private def handle_signal(*signals, message, &block)
       signals.each do |signal|
         signal.trap do
           puts "Caught signal #{signal} -> #{message}"
