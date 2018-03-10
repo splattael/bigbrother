@@ -1,9 +1,12 @@
+variables:
+  CRYSTAL_VERSION: "0.24.2"
+
 stages:
   - release
   - deploy
 
 release:
-  image: jhass/crystal-build-x86_64:0.24.1
+  image: crystallang/crystal:${CRYSTAL_VERSION}-build
   stage: release
   artifacts:
     paths:
@@ -23,7 +26,7 @@ deploy:
     - ci/build_and_push
 
 release i386:
-  image: jhass/crystal-build-i386:0.24.1
+  image: crystallang/crystal:${CRYSTAL_VERSION}-i386-build
   stage: release
   artifacts:
     paths:
