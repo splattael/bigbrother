@@ -13,6 +13,6 @@ dependencies:
     github: hangyas/telegram_bot
     commit: d26bd9ef75ea69c9f07412f2e19704484522fba0
 
-crystal: 0.24.1
+crystal: 0.24.2
 
 license: MIT
