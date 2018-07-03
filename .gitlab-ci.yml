@@ -1,5 +1,5 @@
 variables:
-  CRYSTAL_VERSION: "0.24.2"
+  CRYSTAL_VERSION: "0.25.1"
 
 stages:
   - release
