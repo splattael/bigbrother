@@ -2,5 +2,5 @@ version: 1.0
 shards:
   telegram_bot:
     github: hangyas/telegram_bot
-    commit: 1b2a8b437dfdf43ac4ee19d2b8cbfe4964c3e6e4
+    commit: 50a4976ed04ebe16315dd6b1d3e3c22cc442051a
 
