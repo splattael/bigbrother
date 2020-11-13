@@ -1,5 +1,5 @@
 require "option_parser"
-require "yaml"
+require "yaml_mapping"
 require "base64"
 
 require "./version"

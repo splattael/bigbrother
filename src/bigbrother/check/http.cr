@@ -56,7 +56,7 @@ module Bigbrother
           default: 120,
         }
 
-      def label
+      def label : String
         "#{http_method} #{@url}"
       end
 
