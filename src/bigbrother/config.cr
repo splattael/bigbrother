@@ -1,4 +1,4 @@
-require "yaml"
+require "yaml_mapping"
 
 module Bigbrother
   class Config

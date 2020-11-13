@@ -6,19 +6,19 @@ module Bigbrother
     property app : Bigbrother::App?
 
     abstract def check
-    abstract def label : String
+    abstract def label
 
     def start(app : App)
       @app = app
     end
 
     def run
-      start = Time.now
+      start = Time.monotonic
       begin
         check
-        Response.new(self, Time.now - start, nil)
+        Response.new(self, Time.monotonic - start, nil)
       rescue e
-        Response.new(self, Time.now - start, e)
+        Response.new(self, Time.monotonic - start, e)
       end
     end
 

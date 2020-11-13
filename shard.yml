@@ -11,8 +11,10 @@ targets:
 dependencies:
   telegram_bot:
     github: "hangyas/telegram_bot"
-    commit: "50a4976ed04ebe16315dd6b1d3e3c22cc442051a"
+    commit: "39e0914d52925b57636bc32420961a308ed01b8b"
+  yaml_mapping:
+    github: crystal-lang/yaml_mapping.cr
 
-crystal: 0.27.2
+crystal: 0.35.1
 
 license: MIT

@@ -1,6 +1,10 @@
-version: 1.0
+version: 2.0
 shards:
   telegram_bot:
-    github: hangyas/telegram_bot
-    commit: 50a4976ed04ebe16315dd6b1d3e3c22cc442051a
+    git: https://github.com/hangyas/telegram_bot.git
+    version: 0.1.0+git.commit.39e0914d52925b57636bc32420961a308ed01b8b
+
+  yaml_mapping:
+    git: https://github.com/crystal-lang/yaml_mapping.cr.git
+    version: 0.1.0
 

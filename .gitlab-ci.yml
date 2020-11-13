@@ -1,5 +1,6 @@
 variables:
-  CRYSTAL_VERSION: "0.27.0"
+  CRYSTAL_VERSION: "0.35.1"
+  IMAGE_NAME: ${CI_REGISTRY_IMAGE}
 
 stages:
   - release
@@ -18,11 +19,11 @@ release:
 deploy:
   stage: deploy
   image: docker:dind
-  dependencies:
-    - release
+  needs: ["release"]
   script:
     - export IMAGE_TAG=${CI_COMMIT_SHA:0:7}
     - export IMAGE_TAG_ALIASES=${IMAGE_TAG}-x86_64
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
     - ci/build_and_push
 
 release i386:
@@ -38,8 +39,8 @@ release i386:
 deploy i386:
   stage: deploy
   image: docker:dind
-  dependencies:
-    - release i386
+  needs: ["release i386"]
   script:
     - export IMAGE_TAG=${CI_COMMIT_SHA:0:7}-i386
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
     - ci/build_and_push

@@ -14,7 +14,7 @@ module Bigbrother
 
       private def present_response(response, colorize)
         String.build do |string|
-          string << "[#{Time.now}] "
+          string << "[#{Time.local}] "
 
           if response.ok?
             string << "OK".colorize.green.toggle(colorize)
