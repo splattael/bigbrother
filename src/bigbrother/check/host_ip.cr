@@ -14,7 +14,7 @@ module Bigbrother
         socket.connect(@host, @port, 1.0)
       end
 
-      def label : String
+      def label
         "#{@host}:#{@port}"
       end
     end
