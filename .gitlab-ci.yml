@@ -1,5 +1,6 @@
 variables:
   CRYSTAL_VERSION: "1.3.2"
+  CRYSTAL_VERSION_i386: "1.1.1"
   IMAGE_NAME: ${CI_REGISTRY_IMAGE}
 
 stages:
@@ -27,7 +28,7 @@ deploy:
     - ci/build_and_push
 
 release i386:
-  image: crystallang/crystal:${CRYSTAL_VERSION}-i386-build
+  image: crystallang/crystal:${CRYSTAL_VERSION_i386}-i386-build
   stage: release
   artifacts:
     paths:
