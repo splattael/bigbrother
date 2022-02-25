@@ -71,7 +71,7 @@ module Bigbrother
 
           response = client.exec(
             method: http_method,
-            path: uri.full_path,
+            path: uri.to_s,
             body: as_body(@body),
             headers: headers
           )

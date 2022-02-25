@@ -1,8 +1,16 @@
 version: 2.0
 shards:
+  json_mapping:
+    git: https://github.com/crystal-lang/json_mapping.cr.git
+    version: 0.1.1
+
+  logger:
+    git: https://github.com/crystal-lang/logger.cr.git
+    version: 0.1.0
+
   telegram_bot:
-    git: https://github.com/hangyas/telegram_bot.git
-    version: 0.1.0+git.commit.39e0914d52925b57636bc32420961a308ed01b8b
+    git: https://github.com/splattael/telegram_bot.git
+    version: 0.1.0+git.commit.583bb1a44ba6f0bce7870869be8b780dfa71e6b7
 
   yaml_mapping:
     git: https://github.com/crystal-lang/yaml_mapping.cr.git
