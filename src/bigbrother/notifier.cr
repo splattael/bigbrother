@@ -23,10 +23,10 @@ module Bigbrother
           end
 
           \{% properties[:type] = String %}
-          YAML.mapping(\{{**properties}})
+          YAML.mapping(\{{properties.double_splat}})
         \{% elsif type.is_a?(Path) %}
           class \{{ type }}
-            YAML.mapping(\{{**properties}})
+            YAML.mapping(\{{properties.double_splat}})
           end
         \{% else %}
            \{% raise "unknown config type. Allowed: StringLiteral, Path." %}

@@ -42,7 +42,7 @@ module Bigbrother
         \{% properties[:type] = String %}
         YAML.mapping(
           retries: Int32?,
-          \{{**properties}}
+          \{{properties.double_splat}}
         )
       end
     end
