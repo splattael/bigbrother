@@ -33,7 +33,7 @@ module Bigbrother
       while seconds > 0
         break if yield
         seconds -= resolution
-        sleep resolution
+        sleep resolution.seconds
       end
     end
 
@@ -53,7 +53,7 @@ module Bigbrother
         else
           return response
         end
-        sleep 0.5
+        sleep 0.5.seconds
       end
     end
 

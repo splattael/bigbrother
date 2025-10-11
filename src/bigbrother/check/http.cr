@@ -65,9 +65,9 @@ module Bigbrother
         uri = URI.parse("http://#{@url}") unless uri.scheme
 
         HTTP::Client.new(uri) do |client|
-          client.dns_timeout = @dns_timeout.not_nil!
-          client.connect_timeout = @connect_timeout.not_nil!
-          client.read_timeout = @read_timeout.not_nil!
+          client.dns_timeout = @dns_timeout.not_nil!.seconds
+          client.connect_timeout = @connect_timeout.not_nil!.seconds
+          client.read_timeout = @read_timeout.not_nil!.seconds
 
           response = client.exec(
             method: http_method,

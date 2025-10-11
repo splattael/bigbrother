@@ -1,7 +1,8 @@
-FROM debian:sid-slim
+FROM crystallang/crystal:1.17-alpine
 
-RUN apt-get update && apt-get install -yy ca-certificates && apt-get clean
+WORKDIR /code
 
-ADD bin/bigbrother /
+COPY . .
+RUN make build-release
 
-ENTRYPOINT ["/bigbrother"]
+ENTRYPOINT ["./bin/bigbrother"]

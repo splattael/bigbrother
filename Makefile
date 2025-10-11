@@ -5,5 +5,5 @@ build: update
 	shards build
 
 build-release:
-	shards build --production --link-flags "-static"
+	shards build --production
 	strip bin/bigbrother
