@@ -1,47 +1,15 @@
 variables:
-  CRYSTAL_VERSION: "1.3.2"
-  CRYSTAL_VERSION_i386: "1.1.1"
   IMAGE_NAME: ${CI_REGISTRY_IMAGE}
 
 stages:
   - release
   - deploy
 
-release:
-  image: crystallang/crystal:${CRYSTAL_VERSION}-build
-  stage: release
-  artifacts:
-    paths:
-      - bin
-    expire_in: 2 days
-  script:
-    - make build-release
-
 deploy:
   stage: deploy
   image: docker:dind
-  needs: ["release"]
   script:
     - export IMAGE_TAG=${CI_COMMIT_SHA:0:7}
     - export IMAGE_TAG_ALIASES=${IMAGE_TAG}-x86_64
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-    - ci/build_and_push
-
-release i386:
-  image: crystallang/crystal:${CRYSTAL_VERSION_i386}-i386-build
-  stage: release
-  artifacts:
-    paths:
-      - bin
-    expire_in: 2 days
-  script:
-    - make build-release
-
-deploy i386:
-  stage: deploy
-  image: docker:dind
-  needs: ["release i386"]
-  script:
-    - export IMAGE_TAG=${CI_COMMIT_SHA:0:7}-i386
     - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
     - ci/build_and_push
