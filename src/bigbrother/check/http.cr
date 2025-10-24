@@ -31,7 +31,7 @@ module Bigbrother
           default: HTTP::Headers.new,
         },
         match_body: {
-          type:    Regex,
+          type:    Regex | Array(Regex),
           nilable: true,
           default: /.*/,
         },
@@ -79,8 +79,18 @@ module Bigbrother
           unless @status_code == response.status_code
             fail "status_code=#{response.status_code}"
           end
-          unless @match_body.not_nil!.match(response.body.to_s)
-            fail "match_body=#{response.body[0, 500]}"
+
+          matcher = \
+            if @match_body.is_a?(Array)
+              @match_body.as(Array(Regex))
+            elsif @match_body
+              [@match_body.as(Regex)]
+            else
+              [] of Regex
+            end
+
+          matcher.each do |regex|
+            fail "regex=#{regex}, match_body=#{response.body[0, 500]}" unless regex.match(response.body.to_s)
           end
         end
       end
