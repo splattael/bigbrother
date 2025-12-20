@@ -1,10 +1,12 @@
 require "http/client"
-require "openssl"
+
+require "../helper/ssl_cert_expiry"
 
 module Bigbrother
   module Check
     class Http
       include Check
+      include Helper::SSLCertExpiry
 
       @cert_expires_at : Time?
 
@@ -76,22 +78,16 @@ module Bigbrother
         uri = URI.parse(@url)
         uri = URI.parse("http://#{@url}") unless uri.scheme
 
-        match_not_after_validity(uri) if uri.scheme == "https" && @ssl_min_days_valid
+        @cert_expires_at = verify_not_after_expiry(uri) if uri.scheme == "https" && @ssl_min_days_valid
         match_http_body(uri)
       end
 
-      private def match_not_after_validity(uri)
+      private def verify_not_after_expiry(uri)
         hostname = uri.host || "unknown"
         port = uri.port || 443
 
-        context = OpenSSL::SSL::Context::Client.new
-        tcp_socket = TCPSocket.new(hostname, port)
-        ssl_socket = OpenSSL::SSL::Socket::Client.new(tcp_socket, context, hostname: hostname)
-        cert = ssl_socket.peer_certificate
-        @cert_expires_at = cert.not_after
-
-        if @cert_expires_at.not_nil! - Time::Span.new(days: @ssl_min_days_valid.not_nil!) < Time.utc
-          fail "SSL certificate expires in < #{@ssl_min_days_valid} days"
+        TCPSocket.open(hostname, port) do |tcp_socket|
+          verify_not_after_expiry(@ssl_min_days_valid, tcp_socket, hostname)
         end
       end
 
