@@ -37,7 +37,7 @@ module Bigbrother
         configure_port(config, webhook_port)
       end
 
-      app = App.new(config.not_nil!)
+      app = App.new(config.not_nil!("config missing"))
       register_signal_handlers(app)
       app.run
     end

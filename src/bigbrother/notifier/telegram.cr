@@ -26,7 +26,7 @@ module Bigbrother
       def notify(response, only_errors)
         if !only_errors || response.error?
           message = present_response(response)
-          @bot.not_nil!.notify(message)
+          @bot.not_nil!("bot missing").notify(message)
         end
       end
 
@@ -76,7 +76,7 @@ module Bigbrother
 
           cmd "check" do |msg, params|
             match_label = params[0]? ? Regex.new(params[0]) : /.*/
-            @app.not_nil!.run_checks(only_errors: false,
+            @app.not_nil!("app missing").run_checks(only_errors: false,
               match_label: match_label)
           end
 

@@ -9,7 +9,7 @@ module Bigbrother
         cert = ssl_socket.peer_certificate
         cert_expires_at = cert.not_after
 
-        if cert_expires_at.not_nil! - Time::Span.new(days: ssl_min_days_valid.not_nil!) < Time.utc
+        if cert_expires_at.not_nil!("cert_expires_at missing") - Time::Span.new(days: ssl_min_days_valid.not_nil!("ssl_min_days_valid missing")) < Time.utc
           fail "SSL certificate expires in < #{ssl_min_days_valid} days at #{cert_expires_at}"
         end
 

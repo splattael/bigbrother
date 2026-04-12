@@ -93,9 +93,9 @@ module Bigbrother
 
       private def match_http_body(uri)
         HTTP::Client.new(uri) do |client|
-          client.dns_timeout = @dns_timeout.not_nil!.seconds
-          client.connect_timeout = @connect_timeout.not_nil!.seconds
-          client.read_timeout = @read_timeout.not_nil!.seconds
+          client.dns_timeout = @dns_timeout.not_nil!("dns_timeout missing").seconds
+          client.connect_timeout = @connect_timeout.not_nil!("connect_timeout missing").seconds
+          client.read_timeout = @read_timeout.not_nil!("read_timeout missing").seconds
 
           response = client.exec(
             method: http_method,
