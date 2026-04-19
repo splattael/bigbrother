@@ -1,15 +1,33 @@
-variables:
-  IMAGE_NAME: ${CI_REGISTRY_IMAGE}
+---
+include:
+  - template: Workflows/MergeRequest-Pipelines.gitlab-ci.yml
 
-stages:
-  - release
-  - deploy
-
-deploy:
+release:
   stage: deploy
-  image: docker:dind
+  image: docker:27
+  services:
+    - docker:27-dind
+  variables:
+    CACHE_IMAGE: $CI_REGISTRY_IMAGE/cache
+    VERSION: $CI_COMMIT_SHORT_SHA
+  before_script:
+    - apk add --no-cache curl
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker buildx create --use --driver docker-container --name mybuilder
   script:
-    - export IMAGE_TAG=${CI_COMMIT_SHA:0:7}
-    - export IMAGE_TAG_ALIASES=${IMAGE_TAG}-x86_64
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-    - ci/build_and_push
+    - |
+      docker buildx build \
+        --cache-from type=registry,ref=$CACHE_IMAGE \
+        --cache-to   type=registry,ref=$CACHE_IMAGE,mode=max \
+        --target compile \
+        --tag $CI_REGISTRY_IMAGE:$VERSION \
+        --load \
+        .
+    - |
+      docker cp \
+        $(docker create $CI_REGISTRY_IMAGE:$VERSION):/compile/bin/bigbrother \
+        ./bigbrother
+    - |
+      curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+           --upload-file bigbrother \
+           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/bigbrother/${VERSION}/bigbrother"
