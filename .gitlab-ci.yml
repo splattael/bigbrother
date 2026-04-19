@@ -1,15 +1,16 @@
-variables:
-  IMAGE_NAME: ${CI_REGISTRY_IMAGE}
-
-stages:
-  - release
-  - deploy
-
-deploy:
+upload:
   stage: deploy
-  image: docker:dind
+  image: debian:trixie
+  before_script:
+    - apt update && apt install -yy curl make build-essential pkg-config
+      libpcre2-dev libssl-dev libyaml-dev zlib1g-dev
+    - export MISE_INSTALL_PATH="/usr/local/bin/mise"
+    - export PATH="/root/.local/share/mise/shims:$PATH"
+    - curl https://mise.run | sh
+    - mise install
   script:
-    - export IMAGE_TAG=${CI_COMMIT_SHA:0:7}
-    - export IMAGE_TAG_ALIASES=${IMAGE_TAG}-x86_64
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-    - ci/build_and_push
+    - make build-release
+    - |
+      curl --header "JOB-TOKEN: $CI_JOB_TOKEN" \
+           --upload-file bin/bigbrother \
+           "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/bigbrother/${CI_COMMIT_TAG}/bigbrother"
