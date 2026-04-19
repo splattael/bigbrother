@@ -7,3 +7,6 @@ build: update
 build-release:
 	shards build --production
 	strip bin/bigbrother
+
+build-docker:
+	docker buildx build  --progress=plain .
