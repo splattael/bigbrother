@@ -67,14 +67,14 @@ module Bigbrother
             blacklist: @config.blacklist
           )
 
-          cmd "help" do |msg|
+          cmd "help" do |_msg|
             notify "/check"
             notify "/check LABEL (example <code>/check .com</code>)"
             notify "/chat_id"
             notify "/version"
           end
 
-          cmd "check" do |msg, params|
+          cmd "check" do |_msg, params|
             match_label = params[0]? ? Regex.new(params[0]) : /.*/
             @app.not_nil!("app missing").run_checks(only_errors: false,
               match_label: match_label)
@@ -84,7 +84,7 @@ module Bigbrother
             notify "Chat ID: #{msg.chat.id}"
           end
 
-          cmd "version" do |msg|
+          cmd "version" do |_msg|
             notify Bigbrother::Cli.version
           end
 
@@ -95,7 +95,7 @@ module Bigbrother
           end
         end
 
-        def notify(message)
+        def notify(message : String)
           send_message @config.chat_id, message, parse_mode: "HTML"
         end
 
