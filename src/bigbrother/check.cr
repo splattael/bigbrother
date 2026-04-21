@@ -5,6 +5,7 @@ module Bigbrother
   module Check
     property app : Bigbrother::App?
 
+    abstract def endpoint
     abstract def check
     abstract def label
 

@@ -10,11 +10,14 @@ targets:
 
 dependencies:
   telegram_bot:
-    github: "splattael/telegram_bot"
-    commit: "583bb1a44ba6f0bce7870869be8b780dfa71e6b7"
+    github: splattael/telegram_bot
+    commit: 583bb1a44ba6f0bce7870869be8b780dfa71e6b7
   yaml_mapping:
     github: crystal-lang/yaml_mapping.cr
+  prometheus:
+    github: cloudnative-cr/crystal-prometheus-client
+    commit: 9b59f92ed4de16ae0c822480024dd0da7f5b4900
 
-crystal: 1.17.1
+crystal: 1.18.2
 
 license: MIT

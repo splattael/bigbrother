@@ -12,6 +12,10 @@ module Bigbrother
         @check.type
       end
 
+      def endpoint
+        @check.endpoint
+      end
+
       def label
         @check.label
       end

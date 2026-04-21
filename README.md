@@ -24,6 +24,7 @@ A list of available notifiers:
 
 * [telegram](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/notifier/telegram.cr) - Notify via Telegram's bot.
 * [console](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/notifier/console.cr) - Print all checks on your terminal.
+* [prometheus](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/notifier/prometheus.cr) - Collect and expose Prometheus metrics.
 
 ## Installation
 

@@ -29,11 +29,15 @@ module Bigbrother
         end
       end
 
+      def endpoint
+        "#{@host}:#{@port}"
+      end
+
       def label
         if @cert_expires_at
-          "#{@host}:#{@port} cert_expires_at=#{@cert_expires_at}"
+          "#{endpoint} cert_expires_at=#{@cert_expires_at}"
         else
-          "#{@host}:#{@port}"
+          endpoint
         end
       end
     end

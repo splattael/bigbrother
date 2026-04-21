@@ -66,11 +66,15 @@ module Bigbrother
           default: 7
         }
 
+      def endpoint
+        "#{http_method} #{@url}"
+      end
+
       def label
         if @cert_expires_at
           "#{http_method} #{@url} cert_expires_at=#{@cert_expires_at}"
         else
-          "#{http_method} #{@url}"
+          endpoint
         end
       end
 

@@ -8,6 +8,10 @@ shards:
     git: https://github.com/crystal-lang/logger.cr.git
     version: 0.1.0
 
+  prometheus:
+    git: https://github.com/cloudnative-cr/crystal-prometheus-client.git
+    version: 0.1.0+git.commit.9b59f92ed4de16ae0c822480024dd0da7f5b4900
+
   telegram_bot:
     git: https://github.com/splattael/telegram_bot.git
     version: 0.1.0+git.commit.583bb1a44ba6f0bce7870869be8b780dfa71e6b7
