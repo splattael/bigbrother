@@ -5,7 +5,7 @@ build: update
 	shards build
 
 build-release:
-	shards build --production
+	shards build bigbrother --production --release -Dpreview_mt --stats --time
 	strip bin/bigbrother
 
 build-docker:
