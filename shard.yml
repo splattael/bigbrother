@@ -9,9 +9,9 @@ targets:
     main: src/bigbrother.cr
 
 dependencies:
-  telegram_bot:
-    github: splattael/telegram_bot
-    commit: 583bb1a44ba6f0bce7870869be8b780dfa71e6b7
+  tourmaline:
+    github: protoncr/tourmaline
+    tag: v0.28.0
   yaml_mapping:
     github: crystal-lang/yaml_mapping.cr
   prometheus:

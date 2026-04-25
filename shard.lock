@@ -1,20 +1,28 @@
 version: 2.0
 shards:
-  json_mapping:
-    git: https://github.com/crystal-lang/json_mapping.cr.git
-    version: 0.1.1
+  db:
+    git: https://github.com/crystal-lang/crystal-db.git
+    version: 0.11.0
 
-  logger:
-    git: https://github.com/crystal-lang/logger.cr.git
-    version: 0.1.0
+  html5:
+    git: https://github.com/naqvis/crystal-html5.git
+    version: 0.4.0
+
+  http_proxy:
+    git: https://github.com/mamantoha/http_proxy.git
+    version: 0.14.0+git.commit.5a02af05c5531c639efdf651431a86ec90905f71
 
   prometheus:
     git: https://github.com/cloudnative-cr/crystal-prometheus-client.git
     version: 0.1.0+git.commit.9b59f92ed4de16ae0c822480024dd0da7f5b4900
 
-  telegram_bot:
-    git: https://github.com/splattael/telegram_bot.git
-    version: 0.1.0+git.commit.583bb1a44ba6f0bce7870869be8b780dfa71e6b7
+  tourmaline:
+    git: https://github.com/protoncr/tourmaline.git
+    version: 0.28.0+git.commit.caa4a93ed36167c8b9c9922660907710c41143e0
+
+  xpath2:
+    git: https://github.com/naqvis/crystal-xpath2.git
+    version: 0.2.0
 
   yaml_mapping:
     git: https://github.com/crystal-lang/yaml_mapping.cr.git

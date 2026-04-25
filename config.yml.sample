@@ -9,20 +9,9 @@ notifiers:
     listen: 0.0.0.0
     port: 8080
   - type: "telegram"
-    name: MyBot
+    # name: MyBot
     token: BOT_TOKEN
     chat_id: CHAT_ID (mostly bot id)
-    whitelist: # optional
-      - my_username
-      - friend_of_mine
-    blacklist: # optional
-      - bad_user
-      - another_bad_user
-    webhook:
-      url: "https://my_host/bigbrother"
-      port: 3333
-      # ssl_certificate_path: "path/to/cert.pem"
-      # ssl_key_path: "path/to/private_key.key"
 
 checks:
   - type: "http"

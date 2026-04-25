@@ -1,4 +1,4 @@
-require "telegram_bot"
+require "tourmaline"
 require "html"
 
 module Bigbrother
@@ -9,19 +9,8 @@ module Bigbrother
       @bot : Bot?
 
       config "telegram",
-        name: String,
         token: String,
-        chat_id: Int32 | String,
-        whitelist: Array(String)?,
-        blacklist: Array(String)?,
-        webhook: Webhook?
-
-      config Webhook,
-        url: String,
-        listen: String?,
-        port: Int32?,
-        ssl_certificate_path: String?,
-        ssl_key_path: String?
+        chat_id: Int32 | String
 
       def notify(response, only_errors)
         if !only_errors || response.error?
@@ -56,62 +45,53 @@ module Bigbrother
         end
       end
 
-      class Bot < TelegramBot::Bot
-        include TelegramBot::CmdHandler
+      class Bot
+        getter client : Tourmaline::Client
 
         def initialize(@config : Telegram, @app : App)
-          super(
-            name: @config.name,
-            token: @config.token,
-            whitelist: @config.whitelist,
-            blacklist: @config.blacklist
-          )
+          @client = Tourmaline::Client.new(@config.token)
 
-          cmd "help" do |_msg|
-            notify "/check"
-            notify "/check LABEL (example <code>/check .com</code>)"
-            notify "/chat_id"
-            notify "/version"
+          register "help" do |ctx|
+            notify <<-MESSAGE, ctx: ctx
+              /check
+              /check LABEL (example <code>/check .com</code>)"
+              /chat_id
+              /version
+            MESSAGE
           end
 
-          cmd "check" do |_msg, params|
-            match_label = params[0]? ? Regex.new(params[0]) : /.*/
-            @app.not_nil!("app missing").run_checks(only_errors: false,
-              match_label: match_label)
+          register "check" do |ctx|
+            match_label = ctx.text ? Regex.new(ctx.text!) : /.*/
+            @app
+              .not_nil!("app missing")
+              .run_checks(only_errors: false, match_label: match_label)
           end
 
-          cmd "chat_id" do |msg|
-            notify "Chat ID: #{msg.chat.id}"
+          register "chat_id" do |ctx|
+            notify "Chat ID: #{ctx.message!.chat.id}", ctx: ctx
           end
 
-          cmd "version" do |_msg|
-            notify Bigbrother::Cli.version
+          register "version" do |ctx|
+            notify Bigbrother::Cli.version, ctx: ctx
           end
 
-          if webhook = @config.webhook
-            spawn serve_webhook(webhook)
+          spawn client.poll
+        end
+
+        def register(command, &block : Tourmaline::Context ->)
+          cmd = Tourmaline::CommandHandler.new(command) do |ctx|
+            block.call(ctx)
+          end
+
+          client.register(cmd)
+        end
+
+        def notify(message, ctx = nil)
+          if ctx
+            ctx.reply message, parse_mode: Tourmaline::ParseMode::HTML
           else
-            spawn start_polling
+            client.send_message(@config.chat_id, message, parse_mode: Tourmaline::ParseMode::HTML)
           end
-        end
-
-        def notify(message : String)
-          send_message @config.chat_id, message, parse_mode: "HTML"
-        end
-
-        private def serve_webhook(config)
-          set_webhook(config.url, config.ssl_certificate_path)
-          serve(
-            bind_address: config.listen || "127.0.0.1",
-            bind_port: config.port || 80,
-            ssl_certificate_path: config.ssl_certificate_path,
-            ssl_key_path: config.ssl_key_path
-          )
-        end
-
-        private def start_polling
-          set_webhook("") # Disable webhook
-          polling
         end
       end
     end
