@@ -7,6 +7,7 @@ RUN apt install -yy \
   libpcre2-dev \
   libssl-dev \
   libyaml-dev \
+  libxml2-dev \
   pkg-config \
   zlib1g-dev
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
