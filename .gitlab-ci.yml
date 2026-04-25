@@ -5,8 +5,6 @@ include:
 release:
   stage: deploy
   image: docker:27
-  services:
-    - docker:27-dind
   variables:
     CACHE_IMAGE: $CI_REGISTRY_IMAGE/cache
     VERSION: $CI_COMMIT_SHORT_SHA
