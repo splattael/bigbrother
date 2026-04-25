@@ -58,7 +58,12 @@ module Bigbrother
         @metrics_path : String
 
         def initialize(@config : Prometheus, @metrics : Metrics)
-          @server = HTTP::Server.new do |context|
+          handlers = [
+            HTTP::ErrorHandler.new,
+            HTTP::LogHandler.new
+          ]
+
+          @server = HTTP::Server.new(handlers) do |context|
             context.response.content_type = "text/plain"
             handle_request(context)
           end
