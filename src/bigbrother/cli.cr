@@ -61,6 +61,7 @@ module Bigbrother
 
     private def register_signal_handlers(app)
       handle_signal(Signal::INT, Signal::TERM, message: "Exit") { app.stop }
+      handle_signal(Signal::HUP, message: "Check now") { app.run_checks(only_errors: false) }
     end
 
     private def handle_signal(*signals, message, &block)

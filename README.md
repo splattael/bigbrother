@@ -36,6 +36,12 @@ A list of available notifiers:
     bin/bigbrother -h
     bin/bigbrother -c config.yml
 
+## Check now
+
+To force bigbrother to perform checks now send signal `SIGHUP` to the running process.
+
+    kill -HUP $(pidof bigbrother)
+
 ### Example config
 
 See `config.yml.sample`.
