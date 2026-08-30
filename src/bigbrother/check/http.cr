@@ -122,7 +122,8 @@ module Bigbrother
             end
 
           matcher.each do |regex|
-            fail "regex=#{regex}, match_body=#{response.body[0, 500]}" unless regex.match(response.body.to_s)
+            body = response.body.to_s.scrub
+            fail "regex=#{regex}, match_body=#{body[0, 500]}" unless regex.match(body)
           end
         end
       end
