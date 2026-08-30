@@ -17,6 +17,7 @@ release:
       docker buildx build \
         --cache-from type=registry,ref=$CACHE_IMAGE \
         --cache-to   type=registry,ref=$CACHE_IMAGE,mode=max \
+        --build-arg  GIT_SHA1=$VERSION \
         --target compile \
         --tag $CI_REGISTRY_IMAGE:$VERSION \
         --load \

@@ -19,6 +19,8 @@ COPY .tool-versions .
 RUN mise install && mise reshim
 RUN crystal --version
 COPY . .
+ARG GIT_SHA1
+ENV GIT_SHA1=$GIT_SHA1
 RUN make build-release
 
 FROM scratch
