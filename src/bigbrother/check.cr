@@ -14,12 +14,12 @@ module Bigbrother
     end
 
     def run
-      start = Time.monotonic
+      start = Time.instant
       begin
         check
-        Response.new(self, Time.monotonic - start, nil)
+        Response.new(self, Time.instant - start, nil)
       rescue e
-        Response.new(self, Time.monotonic - start, e)
+        Response.new(self, Time.instant - start, e)
       end
     end
 

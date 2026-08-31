@@ -4,7 +4,7 @@ include:
 
 test:
   stage: test
-  image: crystallang/crystal:1.18.2
+  image: crystallang/crystal:1.21.0
   cache:
     key: shards-$CI_COMMIT_REF_SLUG
     paths:

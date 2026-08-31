@@ -18,6 +18,6 @@ dependencies:
     github: cloudnative-cr/crystal-prometheus-client
     commit: 9b59f92ed4de16ae0c822480024dd0da7f5b4900
 
-crystal: 1.18.2
+crystal: 1.21.0
 
 license: MIT
