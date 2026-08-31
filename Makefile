@@ -1,3 +1,6 @@
+test: update
+	crystal spec
+
 update:
 	shards check || shards update
 
