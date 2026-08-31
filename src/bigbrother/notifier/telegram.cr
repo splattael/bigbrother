@@ -24,6 +24,10 @@ module Bigbrother
         @bot = Bot.new(self, app)
       end
 
+      def stop
+        @bot.try(&.stop)
+      end
+
       private def present_response(response)
         String.build do |string|
           if response.ok?
@@ -50,6 +54,7 @@ module Bigbrother
 
         def initialize(@config : Telegram, @app : App)
           @client = Tourmaline::Client.new(@config.token)
+          @poller = Tourmaline::Poller.new(@client)
 
           register "help" do |ctx|
             notify <<-MESSAGE, ctx: ctx
@@ -75,7 +80,11 @@ module Bigbrother
             notify Bigbrother::Cli.version, ctx: ctx
           end
 
-          spawn client.poll
+          spawn @poller.start
+        end
+
+        def stop
+          @poller.stop
         end
 
         def register(command, &block : Tourmaline::Context ->)

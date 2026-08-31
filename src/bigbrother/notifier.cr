@@ -8,6 +8,9 @@ module Bigbrother
 
     abstract def notify(response : Check::Response, only_errors : Bool)
 
+    def stop
+    end
+
     # # configurable
     # TODO unite
 

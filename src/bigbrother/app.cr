@@ -21,6 +21,7 @@ module Bigbrother
 
     def stop
       @stopped = true
+      @notifiers.each(&.stop)
     end
 
     def run_checks(only_errors = true, match_label = /.*/)

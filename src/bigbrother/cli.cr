@@ -6,7 +6,7 @@ require "./version"
 
 module Bigbrother
   class Cli
-    def self.run(argv) : App
+    def self.run(argv)
       new.run(argv)
     end
 
@@ -14,9 +14,18 @@ module Bigbrother
       new.version
     end
 
-    def run(argv)
-      config_file = nil
+    property config_file : String?
 
+    @app : App?
+    @pending_config : Config?
+
+    def initialize
+      @config_file = nil
+      @exit_requested = false
+      @pending_config = nil
+    end
+
+    def run(argv)
       parser = OptionParser.parse(argv) do |p|
         p.banner = "Usage: bigbrother -c config.yml [arguments]"
         p.on("-v", "--version", "Show current version") do
@@ -24,29 +33,45 @@ module Bigbrother
           exit 0
         end
         p.on("-c YAML", "--config=YAML", "Provide config file") do |name|
-          config_file = name
+          @config_file = name
         end
         p.on("-h", "--help", "Show help") do
           abort p.to_s
         end
       end
 
-      config = read_config(config_file)
+      config = read_config
 
       unless config
         abort parser.to_s
       end
 
-      app = App.new(config.not_nil!("config missing"))
-      register_signal_handlers(app)
+      @app = App.new(config)
+      register_signal_handlers
 
-      app
+      loop do
+        app.run
+        break if @exit_requested
+
+        if pending_config = @pending_config
+          @pending_config = nil
+          @app = App.new(pending_config)
+        end
+      end
     end
 
-    private def read_config(config_file)
-      if config_file && File.exists?(config_file)
-        Config.from_yaml(File.read(config_file))
+    private def app
+      @app.not_nil!("app missing")
+    end
+
+    private def read_config
+      if config_file
+        file = config_file.not_nil!
+        Config.from_yaml(File.read(file)) if File.exists?(file)
       end
+    rescue ex : YAML::ParseException
+      puts "Invalid config #{config_file}: #{ex.message}"
+      nil
     end
 
     def version
@@ -59,13 +84,25 @@ module Bigbrother
       }
     end
 
-    private def register_signal_handlers(app)
-      handle_signal(Signal::INT, Signal::TERM, message: "Exit") { app.stop }
-      handle_signal(Signal::HUP, message: "Check now") { app.run_checks(only_errors: false) }
+    private def register_signal_handlers
+      handle_signal(Signal::INT, Signal::TERM, message: "Exit") do
+        @exit_requested = true
+        app.stop
+      end
+
+      handle_signal(Signal::HUP, message: "Reload config") do
+        if config = read_config
+          @pending_config = config
+          app.stop
+        else
+          puts "Reload failed: invalid config, keeping current config running"
+        end
+      end
     end
 
     private def handle_signal(*signals, message, &block)
       signals.each do |signal|
+        signal.reset
         signal.trap do
           puts "Caught signal #{signal} -> #{message}"
           block.call

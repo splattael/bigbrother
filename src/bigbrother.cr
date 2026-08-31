@@ -3,8 +3,7 @@ require "./bigbrother/**"
 
 module Bigbrother
   def self.run(argv)
-    app = Cli.run(argv)
-    app.run
+    Cli.run(argv)
   end
 end
 

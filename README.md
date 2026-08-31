@@ -36,15 +36,21 @@ A list of available notifiers:
     bin/bigbrother -h
     bin/bigbrother -c config.yml
 
-## Check now
-
-To force bigbrother to perform checks now send signal `SIGHUP` to the running process.
-
-    kill -HUP $(pidof bigbrother)
-
 ### Example config
 
 See `config.yml.sample`.
+
+### Reload config dynamically
+
+To reload bigbrother's config dynamically send signal `SIGHUP` to the running process.
+
+    kill -HUP $(pidof bigbrother)
+
+Caveats:
+
+- Checks already in flight are not cancelled and run to completion and may still notify under the old config
+- No new checks are scheduled until the new App has taken over
+- If the new config file is missing or invalid, the reload is discarded and the current config keeps running
 
 ## Development
 

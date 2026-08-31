@@ -11,6 +11,8 @@ module Bigbrother
         listen: String?,
         port: Int32?
 
+      @endpoint : Endpoint?
+
       def notify(response, only_errors)
         metrics.observe_response(response)
       end
@@ -18,11 +20,18 @@ module Bigbrother
       def start(app)
         super(app)
 
-        spawn Endpoint.new(self, metrics).listen
+        @endpoint = Endpoint.new(self, metrics)
+        spawn @endpoint.not_nil!.listen
       end
 
+      def stop
+        @endpoint.try(&.close)
+      end
+
+      @@metrics : Metrics?
+
       def metrics
-        (@metrics ||= Metrics.new).not_nil!("no metrics")
+        (@@metrics ||= Metrics.new).not_nil!("no metrics")
       end
 
       class Metrics
@@ -77,6 +86,10 @@ module Bigbrother
           puts "Listen on port #{@listen_address}:#{@listen_port}#{@metrics_path}"
           address = @server.bind_tcp(@listen_address, @listen_port)
           @server.listen
+        end
+
+        def close
+          @server.close
         end
 
         private def handle_request(context)
