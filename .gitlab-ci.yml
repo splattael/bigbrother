@@ -17,6 +17,10 @@ test:
 release:
   stage: deploy
   image: docker:27
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+    - when: on_success
   variables:
     CACHE_IMAGE: $CI_REGISTRY_IMAGE/cache
     VERSION: $CI_COMMIT_SHORT_SHA
