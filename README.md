@@ -57,6 +57,12 @@ Caveats:
     make build
     bin/bigbrother
 
+## Testing
+
+    make test
+
+Runs the spec suite (`crystal spec`). Some specs generate self-signed certificates on the fly (e.g. to test SSL certificate expiry checks) and require the `openssl` CLI to be installed. The suite also runs as a `test` job in CI (see `.gitlab-ci.yml`).
+
 ## Contributing
 
 1. Fork it ( https://github.com/splattael/bigbrother/fork )
