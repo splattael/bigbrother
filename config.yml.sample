@@ -46,3 +46,26 @@ checks:
   - type: "http"
     url: https://google.com
     status_code: 302
+  - type: "ftp"
+    host: ftp.example.com
+    # port: 21
+
+    # How TLS is negotiated:
+    #   "explicit" - connect in the clear, then AUTH TLS (RFC 4217), port 21
+    #   "implicit" - TLS from the first byte, conventionally port 990
+    #   "none"     - plain FTP
+    # tls: "explicit"
+
+    # Log in as well, instead of stopping after the greeting/handshake.
+    # user: "alice"
+    # password: "s3cret"
+
+    # match_banner: "Pure-FTPd"
+
+    # Set to false for a server with a self-signed certificate. Expiry is
+    # still checked, the chain is not.
+    # ssl_verify: true
+    # ssl_min_days_valid: 7 # default, null disables
+
+    # connect_timeout: 10
+    # read_timeout: 10

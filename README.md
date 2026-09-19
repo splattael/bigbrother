@@ -17,6 +17,43 @@ Currently, the following checks are implemented:
 
 * [http](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/check/http.cr) - Check a URL for specific for its HTTP status code or content.
 * [host_ip](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/check/host_ip.cr) - Check a host and ip via TCP.
+* [ftp](https://github.com/splattael/bigbrother/blob/master/src/bigbrother/check/ftp.cr) - Check an FTP or FTPS server: greeting, `AUTH TLS`, certificate expiry and login.
+
+### FTP / FTPS
+
+The `ftp` check speaks enough of RFC 959 (and RFC 4217 for FTPS) to tell a
+healthy server from a broken one, which a plain `host_ip` check on port 21
+cannot: it reads the greeting, optionally upgrades to TLS, optionally logs in,
+then hangs up. It never opens a data connection, so the passive port range does
+not have to be reachable.
+
+    - type: "ftp"
+      host: ftp.example.com
+      # port: 21
+      # tls: "explicit"  # "explicit" | "implicit" | "none"
+      # user: "alice"
+      # password: "s3cret"
+      # match_banner: "Pure-FTPd"
+      # ssl_verify: true
+      # ssl_min_days_valid: 7
+      # connect_timeout: 10
+      # read_timeout: 10
+
+`tls` picks how the session is encrypted:
+
+| value | meaning |
+| --- | --- |
+| `explicit` (default) | connect in the clear, then `AUTH TLS` -- what "FTPS" usually means, and what `pure-ftpd --tls` serves on port 21 |
+| `implicit` | TLS from the first byte, conventionally on port 990 |
+| `none` | plain FTP, nothing is encrypted |
+
+`user` (with `password`) turns the check into a real login: `USER`, then `PASS`
+unless the server already answered `230`. Without `user` the session stops
+after the greeting and the optional handshake.
+
+`ssl_verify: false` accepts a certificate that does not validate, for servers
+with a self-signed certificate. Expiry is still reported and still checked
+against `ssl_min_days_valid` (set it to `null` to skip that).
 
 ## Notifiers
 
