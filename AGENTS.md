@@ -86,8 +86,16 @@ reads better in a notification than a stack-trace-worthy exception.
 
 `spec/spec_helper.cr` holds helpers that stand up real servers on an unused
 local port rather than stubbing clients -- `with_http_server`,
-`with_ftp_server`, `with_trusted_tls_server`, `with_self_signed_cert`. Prefer
-extending those over mocking: the bugs worth catching here are protocol bugs.
+`with_ftp_server` (a scripted control connection), `with_ftp_store_server` (a
+real one, with passive data connections and an in-memory file map),
+`with_trusted_tls_server` and `with_self_signed_cert`. Prefer extending those
+over mocking: the bugs worth catching here are protocol bugs, and several of
+them only appear once two sockets are involved.
+
+One trap when writing such a server: an `OpenSSL::SSL::Socket` buffers where a
+`TCPSocket` does not. A fake server that announces a transfer and then blocks
+accepting the data connection will deadlock under TLS unless it sets
+`sync = true` or flushes first.
 
 The TLS helpers shell out to `openssl`, so the CLI has to be installed. They
 use `openssl ca -selfsign -startdate/-enddate` rather than `req -x509
