@@ -189,7 +189,12 @@ private def upgrade_ftp_spec_socket(client, cert)
   context = OpenSSL::SSL::Context::Server.new
   context.certificate_chain = cert_path
   context.private_key = key_path
-  OpenSSL::SSL::Socket::Server.new(client, context, sync_close: false)
+  socket = OpenSSL::SSL::Socket::Server.new(client, context, sync_close: false)
+  # Unlike a TCPSocket an SSL socket buffers, and this server announces a
+  # transfer and then blocks accepting the data connection -- the client would
+  # never see the announcement.
+  socket.sync = true
+  socket
 end
 
 # Generates a self-signed certificate valid for *not_before*..*not_after* with
@@ -253,5 +258,150 @@ def with_self_signed_cert(
     yield({cert_path, key_path})
   ensure
     Process.run("rm", ["-rf", dir])
+  end
+end
+
+# A minimal but real FTP server: it opens passive data connections and keeps
+# an in-memory file map, so `transfer_path` can be exercised end to end
+# without docker. Only the verbs `Check::Ftp` uses are implemented.
+#
+# *files* is both the initial content and the assertion target -- after a
+# successful round trip it must be back to what it started as. *reject* maps a
+# verb to the reply to send instead of doing the work ("STOR" => "553 nope").
+# *corrupt_retr* serves different bytes than were stored, *epsv* disables EPSV
+# to exercise the PASV fallback, and *dead_passive_port* advertises a port
+# nothing listens on.
+def with_ftp_store_server(
+  files : Hash(String, String) = {} of String => String,
+  commands : Array(String) = [] of String,
+  uploads : Array(String) = [] of String,
+  tls_cert : {String, String}? = nil,
+  epsv : Bool = true,
+  reject : Hash(String, String) = {} of String => String,
+  corrupt_retr : String? = nil,
+  dead_passive_port : Bool = false,
+  &
+)
+  server = TCPServer.new("127.0.0.1", 0)
+
+  spawn do
+    next unless client = server.accept?
+
+    io = client.as(IO)
+    listener : TCPServer? = nil
+    prot_p = false
+
+    begin
+      io.print("220 spec server ready\r\n")
+
+      while line = io.gets(chomp: true)
+        commands << line
+        verb, _, argument = line.partition(' ')
+        verb = verb.upcase
+
+        if replacement = reject[verb]?
+          io.print("#{replacement}\r\n")
+          next
+        end
+
+        case verb
+        when "AUTH"
+          if cert = tls_cert
+            io.print("234 AUTH TLS successful.\r\n")
+            io = upgrade_ftp_spec_socket(client, cert)
+          else
+            io.print("500 AUTH not understood.\r\n")
+          end
+        when "USER" then io.print("331 need password\r\n")
+        when "PASS" then io.print("230 logged in\r\n")
+        when "PBSZ" then io.print("200 PBSZ=0\r\n")
+        when "PROT"
+          prot_p = argument.upcase == "P"
+          io.print("200 protection level set\r\n")
+        when "TYPE" then io.print("200 type set\r\n")
+        when "EPSV", "PASV"
+          if verb == "EPSV" && !epsv
+            io.print("500 EPSV not understood.\r\n")
+            next
+          end
+
+          listener.try(&.close)
+          listener = TCPServer.new("127.0.0.1", 0)
+          port = listener.not_nil!.local_address.port
+
+          if dead_passive_port
+            # Advertise a port that has just stopped listening.
+            listener.not_nil!.close
+            listener = nil
+          end
+
+          if verb == "EPSV"
+            io.print("229 Entering Extended Passive Mode (|||#{port}|)\r\n")
+          else
+            io.print("227 Entering Passive Mode (127,0,0,1,#{port // 256},#{port % 256})\r\n")
+          end
+        when "STOR"
+          io.print("150 ok to send\r\n")
+          if data = accept_ftp_spec_data(listener, prot_p, tls_cert)
+            content = data.gets_to_end
+            files[argument] = content
+            uploads << content
+            data.close rescue nil
+          end
+          listener.try(&.close)
+          listener = nil
+          io.print("226 transfer complete\r\n")
+        when "RETR"
+          unless content = files[argument]?
+            io.print("550 no such file\r\n")
+            next
+          end
+          io.print("150 opening data connection\r\n")
+          if data = accept_ftp_spec_data(listener, prot_p, tls_cert)
+            data.print(corrupt_retr || content)
+            data.flush
+            data.close rescue nil
+          end
+          listener.try(&.close)
+          listener = nil
+          io.print("226 transfer complete\r\n")
+        when "DELE"
+          if files.delete(argument)
+            io.print("250 deleted\r\n")
+          else
+            io.print("550 no such file\r\n")
+          end
+        when "QUIT"
+          io.print("221 bye\r\n")
+          break
+        else
+          io.print("500 unknown\r\n")
+        end
+
+        io.flush
+      end
+    rescue
+      # the client may hang up mid-dialogue; every assertion is client side
+    ensure
+      listener.try(&.close)
+      client.close rescue nil
+    end
+  end
+
+  begin
+    yield server.local_address.address, server.local_address.port
+  ensure
+    server.close
+  end
+end
+
+private def accept_ftp_spec_data(listener, prot_p, tls_cert)
+  return nil unless listener
+  return nil unless socket = listener.accept?
+
+  if prot_p && (cert = tls_cert)
+    upgrade_ftp_spec_socket(socket, cert)
+  else
+    socket
   end
 end

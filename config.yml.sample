@@ -62,6 +62,14 @@ checks:
 
     # match_banner: "Pure-FTPd"
 
+    # Upload a file, read it back, compare it and delete it again -- the only
+    # way to notice that the data connection is broken (full disk, read-only
+    # mount, firewalled passive port range). Needs the passive port range to be
+    # reachable; without it no data connection is opened at all.
+    # The path is relative to the login directory.
+    # transfer_path: "bigbrother-probe.txt"
+    # transfer_content: "..." # default: a unique payload per run
+
     # Set to false for a server with a self-signed certificate. Expiry is
     # still checked, the chain is not.
     # ssl_verify: true

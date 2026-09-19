@@ -55,6 +55,42 @@ after the greeting and the optional handshake.
 with a self-signed certificate. Expiry is still reported and still checked
 against `ssl_min_days_valid` (set it to `null` to skip that).
 
+#### Testing the data connection
+
+By default the check never opens a data connection, so the passive port range
+does not have to be reachable. Setting `transfer_path` adds a full round trip
+-- upload, read back, compare, delete:
+
+    - type: "ftp"
+      host: ftp.example.com
+      user: "alice"
+      password: "s3cret"
+      transfer_path: "bigbrother-probe.txt"
+      # transfer_content: "..."  # default: a unique payload per run
+
+This is the only way to catch a server that greets, negotiates TLS and
+authenticates perfectly but cannot actually move bytes -- a full disk, a
+read-only mount, or a passive port range the firewall never opened. A plain
+`host_ip` check and an `ftp` check without `transfer_path` both stay green in
+all three cases.
+
+Notes:
+
+- The path is relative to the login directory, and these accounts are usually
+  chrooted into a live document root, so pick a name that is obviously a probe
+  and harmless to serve.
+- The payload is unique per run unless `transfer_content` says otherwise, so a
+  leftover file from an earlier run cannot make `RETR` succeed against a `STOR`
+  that silently wrote nothing.
+- The probe is deleted even when the check fails partway. The one case that can
+  leave a file behind is a server that accepts `STOR` and then stalls, because
+  it will not process the `DELE` while it is still waiting for the data
+  connection; the next healthy run overwrites and removes it.
+- `PBSZ 0` and `PROT P` are negotiated first when the control connection is
+  encrypted, so the data connection is encrypted too. Servers that additionally
+  require the data connection to *resume* the control connection's TLS session
+  (vsftpd's `require_ssl_reuse`) are not supported; pure-ftpd does not.
+
 ## Notifiers
 
 A list of available notifiers:

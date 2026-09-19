@@ -15,8 +15,12 @@ module Bigbrother
     # exactly how an FTP server tends to break. This check walks far enough
     # into the session to catch those.
     #
-    # No data connection is opened, so neither PASV nor the passive port range
-    # has to be reachable for the check to pass.
+    # By default no data connection is opened, so neither PASV nor the passive
+    # port range has to be reachable. Setting `transfer_path` adds a full
+    # round trip -- upload, download, compare, delete -- which does need the
+    # passive range, and which is the only way to catch a server that
+    # authenticates fine but cannot actually move bytes (a full disk, a
+    # read-only mount, an unreachable passive port range).
     class Ftp
       include Check
       include Helper::SSLCertExpiry
@@ -62,6 +66,16 @@ module Bigbrother
         },
         match_banner: {
           type:    Regex,
+          nilable: true,
+          default: nil,
+        },
+        transfer_path: {
+          type:    String,
+          nilable: true,
+          default: nil,
+        },
+        transfer_content: {
+          type:    String,
           nilable: true,
           default: nil,
         },
@@ -135,6 +149,7 @@ module Bigbrother
           end
 
           login(socket) if @user
+          transfer(socket) if @transfer_path
 
           # Politeness, not a health signal: the session already proved what
           # the check cares about, so a server that hangs up rudely here
@@ -154,14 +169,149 @@ module Bigbrother
         end
       end
 
-      private def start_tls(tcp_socket)
+      # Uploads a payload, reads it back, compares it, and deletes it again.
+      # This is the part of the check that needs a data connection.
+      private def transfer(socket)
+        path = @transfer_path.not_nil!("transfer_path missing")
+
+        if tls?
+          # RFC 4217: the data channel has its own protection level, and it
+          # defaults to Clear even on a TLS control connection. pure-ftpd
+          # refuses PROT P unless PBSZ was sent first.
+          send_command(socket, "PBSZ 0")
+          expect(socket, 200, "PBSZ 0")
+          send_command(socket, "PROT P")
+          expect(socket, 200, "PROT P")
+        end
+
+        send_command(socket, "TYPE I")
+        expect(socket, 200, "TYPE I")
+
+        # Unique per run: a leftover file from an earlier run would otherwise
+        # let RETR succeed even when STOR silently wrote nothing.
+        payload = @transfer_content || "bigbrother probe #{Time.utc.to_rfc3339} #{Random::Secure.hex(8)}\n"
+
+        deleted = false
+        begin
+          with_data_connection(socket, "STOR #{path}", &.print(payload))
+
+          retrieved = with_data_connection(socket, "RETR #{path}", &.gets_to_end)
+          unless retrieved == payload
+            fail "RETR returned #{retrieved.bytesize} bytes, stored #{payload.bytesize}"
+          end
+
+          send_command(socket, "DELE #{path}")
+          expect(socket, 250, "DELE")
+          deleted = true
+        ensure
+          # Clean up whenever the delete above did not happen -- including when
+          # STOR itself failed. A server creates the file when it accepts STOR
+          # and only then moves the bytes, so a transfer that dies in between
+          # (an unreachable passive port, a disk filling up) leaves the probe
+          # behind. These accounts are chrooted into live document roots; a
+          # monitoring check must not litter them.
+          unless deleted
+            begin
+              send_command(socket, "DELE #{path}")
+              read_reply(socket)
+            rescue IO::Error | Failure
+              # best effort -- the failure that matters is already being raised
+            end
+          end
+        end
+      end
+
+      # Opens a passive data connection, issues *command* on the control
+      # connection, yields the data socket, and waits for the transfer to be
+      # confirmed.
+      private def with_data_connection(socket, command, &)
+        port = passive_port(socket)
+        verb = command.partition(' ').first
+
+        # Connect to the host we are already talking to rather than the address
+        # the server advertises. Behind NAT -- or in a container -- PASV
+        # routinely returns something unroutable: pure-ftpd in docker answers
+        # with its bridge address even when PUBLICHOST is set.
+        data = TCPSocket.new(@host, port, connect_timeout: @connect_timeout.seconds)
+        data.read_timeout = @read_timeout.seconds
+        data.sync = true
+
+        data_io = nil
+
+        begin
+          send_command(socket, command)
+
+          # 125 and 150 both mean "go ahead"; the handshake on a protected data
+          # connection only happens once the server has agreed to the transfer.
+          code, message = read_reply(socket)
+          unless code == 150 || code == 125
+            fail "#{verb}: #{message.lines.first?}"
+          end
+
+          data_io = tls? ? start_tls(data, verify_expiry: false) : data
+          result = yield data_io
+
+          # The server only reports the outcome once the data connection is
+          # closed, so this cannot wait until the ensure block.
+          close_data(data_io)
+          data_io = nil
+          expect(socket, 226, verb)
+
+          result
+        ensure
+          close_data(data_io) if data_io
+          data.close rescue nil
+        end
+      end
+
+      # Asks for a passive port. EPSV (RFC 2428) is tried first because it
+      # answers with a bare port number; PASV's six-number form encodes an
+      # address that is routinely wrong, and is only used as a fallback for
+      # servers too old to know EPSV.
+      private def passive_port(socket)
+        send_command(socket, "EPSV")
+        code, message = read_reply(socket)
+
+        if code == 229
+          if match = message.match(/\((.)\1\1(\d+)\1\)/)
+            return match[2].to_i
+          end
+          fail "EPSV: cannot parse #{message.lines.first?}"
+        end
+
+        send_command(socket, "PASV")
+        message = expect(socket, 227, "PASV")
+
+        unless match = message.match(/(\d+),(\d+),(\d+),(\d+),(\d+),(\d+)/)
+          fail "PASV: cannot parse #{message.lines.first?}"
+        end
+
+        match[5].to_i * 256 + match[6].to_i
+      end
+
+      private def close_data(data_io)
+        data_io.close
+      rescue IO::Error | OpenSSL::SSL::Error
+        # the server may have closed first; the control connection has the
+        # authoritative answer either way
+      end
+
+      private def tls?
+        !@tls.none?
+      end
+
+      # *verify_expiry* is false for data connections: they present the same
+      # certificate as the control connection, which has already been checked.
+      private def start_tls(tcp_socket, verify_expiry = true)
         context = OpenSSL::SSL::Context::Client.new
         context.verify_mode = OpenSSL::SSL::VerifyMode::NONE unless @ssl_verify
 
         ssl_socket = OpenSSL::SSL::Socket::Client.new(tcp_socket, context, hostname: @host)
         ssl_socket.sync = true
 
-        @cert_expires_at = verify_not_after_expiry(@ssl_min_days_valid, ssl_socket) if @ssl_min_days_valid
+        if verify_expiry && @ssl_min_days_valid
+          @cert_expires_at = verify_not_after_expiry(@ssl_min_days_valid, ssl_socket)
+        end
 
         ssl_socket
       end

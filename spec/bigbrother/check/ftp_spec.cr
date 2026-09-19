@@ -375,6 +375,243 @@ module Bigbrother::Check
       end
     end
 
+    describe "transfer_path" do
+      it "uploads, reads back, compares and deletes" do
+        files = {} of String => String
+        commands = [] of String
+
+        with_ftp_store_server(files, commands) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            user: "alice"
+            password: "s3cret"
+            transfer_path: "probe.txt"
+            YAML
+
+          check.run.ok?.should be_true
+
+          files.should be_empty
+          commands.should eq [
+            "USER alice", "PASS s3cret", "TYPE I",
+            "EPSV", "STOR probe.txt",
+            "EPSV", "RETR probe.txt",
+            "DELE probe.txt", "QUIT",
+          ]
+        end
+      end
+
+      it "leaves the rest of the directory alone" do
+        files = {"keep.txt" => "not mine"}
+
+        with_ftp_store_server(files) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            YAML
+
+          check.run.ok?.should be_true
+          files.should eq({"keep.txt" => "not mine"})
+        end
+      end
+
+      it "sends a unique payload so a stale file cannot fake a pass" do
+        uploads = [] of String
+
+        2.times do
+          with_ftp_store_server(uploads: uploads) do |host, port|
+            check = Ftp.from_yaml <<-YAML
+              type: "ftp"
+              host: "#{host}"
+              port: #{port}
+              tls: "none"
+              transfer_path: "probe.txt"
+              YAML
+
+            check.run.ok?.should be_true
+          end
+        end
+
+        uploads.size.should eq 2
+        uploads[0].should_not eq uploads[1]
+      end
+
+      it "honours transfer_content when given" do
+        uploads = [] of String
+
+        with_ftp_store_server(uploads: uploads) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            transfer_content: "exactly this"
+            YAML
+
+          check.run.ok?.should be_true
+        end
+
+        uploads.should eq ["exactly this"]
+      end
+
+      it "negotiates PBSZ and PROT before transferring over TLS" do
+        with_self_signed_cert do |cert_path, key_path|
+          commands = [] of String
+
+          with_ftp_store_server(commands: commands, tls_cert: {cert_path, key_path}) do |host, port|
+            check = Ftp.from_yaml <<-YAML
+              type: "ftp"
+              host: "#{host}"
+              port: #{port}
+              ssl_verify: false
+              transfer_path: "probe.txt"
+              YAML
+
+            check.run.ok?.should be_true
+            commands.should contain "PBSZ 0"
+            commands.should contain "PROT P"
+          end
+        end
+      end
+
+      it "does not negotiate PBSZ and PROT without TLS" do
+        commands = [] of String
+
+        with_ftp_store_server(commands: commands) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            YAML
+
+          check.run.ok?.should be_true
+          commands.should_not contain "PBSZ 0"
+        end
+      end
+
+      it "falls back to PASV when the server does not know EPSV" do
+        commands = [] of String
+
+        with_ftp_store_server(commands: commands, epsv: false) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            YAML
+
+          check.run.ok?.should be_true
+          commands.should contain "PASV"
+        end
+      end
+
+      it "fails when the server refuses the upload" do
+        with_ftp_store_server(reject: {"STOR" => "553 Can't open that file"}) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            YAML
+
+          response = check.run
+          response.error?.should be_true
+          response.exception.to_s.should contain "STOR: 553"
+        end
+      end
+
+      it "fails when the data connection cannot be reached" do
+        # A firewalled passive port range: the control connection is healthy,
+        # which is exactly what a plain port check would report.
+        with_ftp_store_server(dead_passive_port: true) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            YAML
+
+          check.run.error?.should be_true
+        end
+      end
+
+      it "fails when the bytes read back differ from the bytes written" do
+        with_ftp_store_server(corrupt_retr: "something else entirely") do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            YAML
+
+          response = check.run
+          response.error?.should be_true
+          response.exception.to_s.should contain "RETR returned"
+        end
+      end
+
+      it "deletes the probe even when reading it back fails" do
+        files = {} of String => String
+
+        with_ftp_store_server(files, corrupt_retr: "wrong") do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            YAML
+
+          check.run.error?.should be_true
+          files.should be_empty
+        end
+      end
+
+      it "fails when the probe cannot be deleted" do
+        with_ftp_store_server(reject: {"DELE" => "550 Permission denied"}) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            transfer_path: "probe.txt"
+            YAML
+
+          response = check.run
+          response.error?.should be_true
+          response.exception.to_s.should contain "DELE: 550"
+        end
+      end
+
+      it "opens no data connection when transfer_path is unset" do
+        commands = [] of String
+
+        with_ftp_store_server(commands: commands) do |host, port|
+          check = Ftp.from_yaml <<-YAML
+            type: "ftp"
+            host: "#{host}"
+            port: #{port}
+            tls: "none"
+            YAML
+
+          check.run.ok?.should be_true
+          commands.should eq ["QUIT"]
+        end
+      end
+    end
+
     it "defaults to port 21" do
       Ftp.from_yaml(<<-YAML).port.should eq 21
         type: "ftp"
