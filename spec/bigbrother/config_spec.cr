@@ -23,6 +23,24 @@ module Bigbrother
       config.checks.map(&.class).should eq [Check::Http, Check::HostIp]
     end
 
+    it "dispatches on the type discriminator, not on the first type that parses" do
+      # `host_ip` and `ftp` both accept a bare host/port node, so whichever
+      # registers first would win if the discriminator were not consulted.
+      config = Config.from_yaml <<-YAML
+        check_every: 60
+        notifiers: []
+        checks:
+          - type: "host_ip"
+            host: "example.com"
+            port: 21
+          - type: "ftp"
+            host: "example.com"
+            port: 21
+        YAML
+
+      config.checks.map(&.class).should eq [Check::HostIp, Check::Ftp]
+    end
+
     it "defaults retries to 0 when omitted" do
       config = Config.from_yaml <<-YAML
         check_every: 30

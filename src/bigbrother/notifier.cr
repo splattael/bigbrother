@@ -41,13 +41,13 @@ module Bigbrother
       def self.new(ctx : YAML::ParseContext, node : YAML::Nodes::Node)
         {% for type in TYPES %}
           begin
+            # A node can parse as more than one type once several of them
+            # share their required attributes, so the `type` discriminator --
+            # not the first successful parse -- decides. Falling through to
+            # the next candidate keeps dispatch independent of the order in
+            # which the types happened to register.
             config = {{type}}.new(ctx, node)
-            if {{type}}.type != config.type
-              raise "Unmatched attribute type for {{type}}:\n" +
-                    "  Expected: #{{{type}}.type.inspect}\n" +
-                    "    Actual: #{config.type.inspect}"
-            end
-            return config
+            return config if {{type}}.type == config.type
           rescue YAML::ParseException
             # Ignore
           end

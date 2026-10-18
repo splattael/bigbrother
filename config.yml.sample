@@ -46,3 +46,34 @@ checks:
   - type: "http"
     url: https://google.com
     status_code: 302
+  - type: "ftp"
+    host: ftp.example.com
+    # port: 21
+
+    # How TLS is negotiated:
+    #   "explicit" - connect in the clear, then AUTH TLS (RFC 4217), port 21
+    #   "implicit" - TLS from the first byte, conventionally port 990
+    #   "none"     - plain FTP
+    # tls: "explicit"
+
+    # Log in as well, instead of stopping after the greeting/handshake.
+    # user: "alice"
+    # password: "s3cret"
+
+    # match_banner: "Pure-FTPd"
+
+    # Upload a file, read it back, compare it and delete it again -- the only
+    # way to notice that the data connection is broken (full disk, read-only
+    # mount, firewalled passive port range). Needs the passive port range to be
+    # reachable; without it no data connection is opened at all.
+    # The path is relative to the login directory.
+    # transfer_path: "bigbrother-probe.txt"
+    # transfer_content: "..." # default: a unique payload per run
+
+    # Set to false for a server with a self-signed certificate. Expiry is
+    # still checked, the chain is not.
+    # ssl_verify: true
+    # ssl_min_days_valid: 7 # default, null disables
+
+    # connect_timeout: 10
+    # read_timeout: 10
