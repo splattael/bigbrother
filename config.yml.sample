@@ -17,14 +17,14 @@ checks:
   - type: "http"
     # retries: nil (defaults to main config's `retries` above)
 
-    # Space out the retries: after `min_attempts` failed attempts, pause
-    # `delay` seconds, doubling after each further failure up to `max_delay`.
-    # Off unless set. Only affects retries, so it does nothing while the
-    # check's `retries` (its own or the global one) is 0.
+    # Sit out rounds while the check keeps failing: after `min_attempts`
+    # failed runs in a row, pause for `delay` seconds, doubling after each
+    # further failed run up to `max_delay`. A successful run ends the pause.
+    # Off unless set.
     # backoff:
     #   min_attempts: 1
-    #   delay: 1
-    #   max_delay: 60
+    #   delay: 600 # required
+    #   max_delay: 3600 # required
     url: https://www.facebook.com
     match_body: Facebook
     ssl_min_days_valid: 7 # default

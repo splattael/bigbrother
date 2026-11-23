@@ -69,7 +69,7 @@ module Bigbrother
             match_label = ctx.text ? Regex.new(ctx.text!) : /.*/
             @app
               .not_nil!("app missing")
-              .run_checks(only_errors: false, match_label: match_label)
+              .run_checks(only_errors: false, match_label: match_label, ignore_backoff: true)
           end
 
           register "chat_id" do |ctx|

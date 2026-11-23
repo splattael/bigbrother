@@ -94,22 +94,27 @@ Notes:
 ### Retries and backoff
 
 A failing check is retried up to `retries` times (per check, or the global
-`retries`) before the notifiers hear about it, with half a second between
-attempts. That is too short to ride out a service restart. A check can space
-its retries out instead:
+`retries` it inherits), half a second apart, before the notifiers hear about
+it. Only when all of them fail does the run count as failed.
 
-    - type: "http"
-      url: https://example.com
-      retries: 6
+A check against a host we do not control can be down for days, and would then
+fail -- and notify -- every round. `backoff:` makes such a check sit out rounds
+instead:
+
+    - type: "host_ip"
+      host: example.com
+      port: 25
       backoff:
-        min_attempts: 2  # failed attempts before the backoff starts, default 1
-        delay: 5         # first pause in seconds, doubles after each failure, default 1
-        max_delay: 60    # upper bound for a pause in seconds, default 60
+        min_attempts: 2  # failed runs in a row before pausing, default 1
+        delay: 600       # first pause in seconds, doubles after each failed run
+        max_delay: 1800  # upper bound for a pause in seconds
 
-This retries after 0.5, 5, 10, 20, 40 and 60 seconds. Backoff is off unless a
-check sets `backoff:`. It only spaces out retries, so it does nothing while
-the check's `retries` (its own, or the global one it inherits) is 0. Keep the total
-below `check_every`, or the next round starts while the last one still waits.
+With `check_every: 300` this checks after 5 minutes, then after 10, 20, and
+from then on every 30 minutes. A successful run ends the backoff. A pause
+counts from the start of the round, so it skips whole rounds: a pause shorter
+than `check_every` changes nothing, and 600 skips exactly one round. Backoff
+is off unless a check sets `backoff:`. Telegram's `/check` runs paused checks
+anyway, and a config reload forgets every pause.
 
 ## Notifiers
 

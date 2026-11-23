@@ -2,7 +2,7 @@ require "../../spec_helper"
 
 module Bigbrother
   describe Check::Backoff do
-    it "keeps the short pause until min_attempts attempts have failed" do
+    it "does not pause before min_attempts runs have failed" do
       backoff = Check::Backoff.new(min_attempts: 3, delay: 2.0, max_delay: 60.0)
 
       backoff.delay_after(1).should be_nil
@@ -41,7 +41,7 @@ module Bigbrother
               max_delay: 120
           - type: "ftp"
             host: "example.com"
-            backoff: {}
+            backoff: {delay: 600, max_delay: 1800}
         YAML
 
       config.checks[0].backoff.should be_nil
@@ -51,18 +51,15 @@ module Bigbrother
       backoff.delay.should eq 5.0
       backoff.max_delay.should eq 120.0
 
-      defaults = config.checks[2].backoff.not_nil!
-      defaults.min_attempts.should eq 1
-      defaults.delay.should eq 1.0
-      defaults.max_delay.should eq 60.0
+      config.checks[2].backoff.not_nil!.min_attempts.should eq 1
     end
     {
-      "min_attempts: 0"           => "min_attempts must be at least 1",
-      "delay: 0"                  => "delay must be greater than 0",
-      "delay: -1"                 => "delay must be greater than 0",
-      "delay: .nan"               => "delay must be greater than 0",
-      "max_delay: .inf"           => "max_delay must be finite",
-      "{delay: 10, max_delay: 5}" => "max_delay must not be less than delay",
+      "{min_attempts: 0, delay: 1, max_delay: 1}" => "min_attempts must be at least 1",
+      "{delay: 0, max_delay: 1}"                  => "delay must be greater than 0",
+      "{delay: -1, max_delay: 1}"                 => "delay must be greater than 0",
+      "{delay: .nan, max_delay: 1}"               => "delay must be greater than 0",
+      "{delay: 1, max_delay: .inf}"               => "max_delay must be finite",
+      "{delay: 10, max_delay: 5}"                 => "max_delay must not be less than delay",
     }.each do |backoff, message|
       it "rejects `#{backoff}` when the config is loaded" do
         yaml = <<-YAML
@@ -71,7 +68,7 @@ module Bigbrother
           checks:
             - type: "ftp"
               host: "example.com"
-              backoff: #{backoff.starts_with?("{") ? backoff : "{#{backoff}}"}
+              backoff: #{backoff}
           YAML
 
         ex = expect_raises(YAML::ParseException) { Config.from_yaml(yaml) }
