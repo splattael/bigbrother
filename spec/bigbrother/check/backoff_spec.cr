@@ -56,5 +56,47 @@ module Bigbrother
       defaults.delay.should eq 1.0
       defaults.max_delay.should eq 60.0
     end
+    {
+      "min_attempts: 0"           => "min_attempts must be at least 1",
+      "delay: 0"                  => "delay must be greater than 0",
+      "delay: -1"                 => "delay must be greater than 0",
+      "delay: .nan"               => "delay must be greater than 0",
+      "max_delay: .inf"           => "max_delay must be finite",
+      "{delay: 10, max_delay: 5}" => "max_delay must not be less than delay",
+    }.each do |backoff, message|
+      it "rejects `#{backoff}` when the config is loaded" do
+        yaml = <<-YAML
+          check_every: 60
+          notifiers: []
+          checks:
+            - type: "ftp"
+              host: "example.com"
+              backoff: #{backoff.starts_with?("{") ? backoff : "{#{backoff}}"}
+          YAML
+
+        ex = expect_raises(YAML::ParseException) { Config.from_yaml(yaml) }
+        ex.message.not_nil!.should contain "Invalid backoff: #{message}"
+        ex.line_number.should eq 6
+      end
+    end
+
+    it "rejects invalid values passed to the constructor" do
+      expect_raises(ArgumentError, "max_delay must not be less than delay") do
+        Check::Backoff.new(delay: 2.0, max_delay: 1.0)
+      end
+    end
+
+    it "reports a check's own parse error instead of a generic one" do
+      ex = expect_raises(YAML::ParseException) do
+        Config.from_yaml <<-YAML
+          check_every: 60
+          notifiers: []
+          checks:
+            - type: "http"
+              retries: 2
+          YAML
+      end
+      ex.message.not_nil!.should_not contain "Cound't parse"
+    end
   end
 end

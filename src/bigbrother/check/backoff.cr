@@ -29,6 +29,27 @@ module Bigbrother
       )
 
       def initialize(@min_attempts = 1, @delay = 1.0, @max_delay = 60.0)
+        if error = validation_error
+          raise ArgumentError.new(error)
+        end
+      end
+
+      # Hooks into the constructor `YAML.mapping` generates, so a bad value
+      # fails when the config is loaded, pointing at its line, instead of
+      # turning into a busy loop or an endless sleep once the check fails.
+      def initialize(ctx : YAML::ParseContext, node : YAML::Nodes::Node, _dummy : Nil)
+        previous_def
+        if error = validation_error
+          node.raise "Invalid backoff: #{error}"
+        end
+      end
+
+      private def validation_error
+        # Written so that NaN fails every comparison and is rejected too.
+        return "min_attempts must be at least 1" unless @min_attempts >= 1
+        return "delay must be greater than 0" unless @delay > 0
+        return "max_delay must be finite" unless @max_delay.finite?
+        "max_delay must not be less than delay" unless @max_delay >= @delay
       end
 
       # Pause after `failed_attempts` attempts have failed, or nil while the

@@ -19,7 +19,8 @@ checks:
 
     # Space out the retries: after `min_attempts` failed attempts, pause
     # `delay` seconds, doubling after each further failure up to `max_delay`.
-    # Off unless set; does nothing without `retries`.
+    # Off unless set. Only affects retries, so it does nothing while the
+    # check's `retries` (its own or the global one) is 0.
     # backoff:
     #   min_attempts: 1
     #   delay: 1

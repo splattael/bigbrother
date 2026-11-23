@@ -107,7 +107,8 @@ its retries out instead:
         max_delay: 60    # upper bound for a pause in seconds, default 60
 
 This retries after 0.5, 5, 10, 20, 40 and 60 seconds. Backoff is off unless a
-check sets `backoff:`, and it does nothing without `retries`. Keep the total
+check sets `backoff:`. It only spaces out retries, so it does nothing while
+the check's `retries` (its own, or the global one it inherits) is 0. Keep the total
 below `check_every`, or the next round starts while the last one still waits.
 
 ## Notifiers
