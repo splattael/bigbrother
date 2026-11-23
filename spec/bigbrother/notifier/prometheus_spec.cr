@@ -35,6 +35,15 @@ module Bigbrother::Notifier
       lines.each { |line| line.should match(/\A[a-z_]+\{.*\} [0-9.e+-]+\z/) }
     end
 
+    it "replaces invalid UTF-8 in an error message" do
+      message = String.new(Bytes[0x62, 0x6f, 0x64, 0x79, 0x3d, 0xff, 0xfe, 0x21])
+      METRICS.observe_response(response("utf8.example", Check::Failure.new(message)))
+
+      total = lines_for("utf8.example").find!(&.starts_with?("checks_total{"))
+      total.valid_encoding?.should be_true
+      total.should contain(%(error="body=\u{FFFD}\u{FFFD}!"}))
+    end
+
     it "truncates long error messages" do
       METRICS.observe_response(response("long.example", Check::Failure.new("x" * 500)))
 

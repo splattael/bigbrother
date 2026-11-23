@@ -71,9 +71,13 @@ module Bigbrother
         # The prometheus shard writes label values verbatim. A single `"` or
         # newline in one value makes the whole exposition unparseable, and
         # Prometheus then drops every sample of the scrape (`up` = 0) until
-        # bigbrother restarts and the bad series is gone.
+        # bigbrother restarts and the bad series is gone. Invalid UTF-8 does
+        # the same -- Prometheus rejects such a label value -- and an http
+        # failure message quotes the response body, whatever its encoding.
+        # `gsub` happens to replace invalid bytes already, since it rebuilds
+        # the string char by char; `scrub` says so instead of relying on it.
         def escape_label_value(value)
-          value.gsub({'\\' => "\\\\", '"' => "\\\"", '\n' => "\\n"})
+          value.scrub.gsub({'\\' => "\\\\", '"' => "\\\"", '\n' => "\\n"})
         end
 
         def collect(output)
