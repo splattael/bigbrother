@@ -1,5 +1,6 @@
 require "./check/failure"
 require "./check/response"
+require "./check/backoff"
 
 module Bigbrother
   module Check
@@ -43,6 +44,7 @@ module Bigbrother
         \{% properties[:type] = String %}
         YAML.mapping(
           retries: Int32?,
+          backoff: Bigbrother::Check::Backoff?,
           \{{properties.double_splat}}
         )
       end
