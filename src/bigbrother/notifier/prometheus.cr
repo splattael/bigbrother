@@ -44,16 +44,36 @@ module Bigbrother
           )
         end
 
+        # Only the start of an error message goes into the `error` label. An
+        # http `match_body` failure carries up to 500 bytes of the response
+        # body -- once a whole metrics page from a restarting exporter -- and
+        # each distinct message is a new series.
+        ERROR_LABEL_MAX = 120
+
         def observe_response(response)
           labels = {
-            "type" => response.type,
+            "type"     => response.type,
             "endpoint" => response.endpoint,
-            "status" => response.ok? ? "ok" : "error"
+            "status"   => response.ok? ? "ok" : "error",
           }
-          labels["error"] = response.error.to_s if response.error?
+          labels["error"] = error_label(response.error.to_s) if response.error?
+          labels.transform_values! { |value| escape_label_value(value) }
 
           @total.inc(labels: labels)
           @duration.observe(response.duration.total_seconds, labels)
+        end
+
+        def error_label(message)
+          line = message.lines.first? || ""
+          line.size > ERROR_LABEL_MAX ? "#{line[0, ERROR_LABEL_MAX]}..." : line
+        end
+
+        # The prometheus shard writes label values verbatim. A single `"` or
+        # newline in one value makes the whole exposition unparseable, and
+        # Prometheus then drops every sample of the scrape (`up` = 0) until
+        # bigbrother restarts and the bad series is gone.
+        def escape_label_value(value)
+          value.gsub({'\\' => "\\\\", '"' => "\\\"", '\n' => "\\n"})
         end
 
         def collect(output)
