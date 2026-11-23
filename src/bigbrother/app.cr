@@ -47,15 +47,18 @@ module Bigbrother
 
     private def execute_check(check)
       retries = check.retries || @config.retries
+      failed_attempts = 0
       loop do
         response = check.run
-        if response.error? && retries > 0
-          retries -= 1
-        else
-          return response
-        end
-        sleep 0.5.seconds
+        return response if response.ok? || failed_attempts >= retries
+
+        failed_attempts += 1
+        sleep retry_delay(check, failed_attempts)
       end
+    end
+
+    private def retry_delay(check, failed_attempts)
+      check.backoff.try(&.delay_after(failed_attempts)) || 0.5.seconds
     end
 
     private def notify(response, only_errors)

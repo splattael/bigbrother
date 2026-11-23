@@ -91,6 +91,26 @@ Notes:
   require the data connection to *resume* the control connection's TLS session
   (vsftpd's `require_ssl_reuse`) are not supported; pure-ftpd does not.
 
+### Retries and backoff
+
+A failing check is retried up to `retries` times (per check, or the global
+`retries`) before the notifiers hear about it, with half a second between
+attempts. That is too short to ride out a service restart. A check can space
+its retries out instead:
+
+    - type: "http"
+      url: https://example.com
+      retries: 6
+      backoff:
+        min_attempts: 2  # failed attempts before the backoff starts, default 1
+        delay: 5         # first pause in seconds, doubles after each failure, default 1
+        max_delay: 60    # upper bound for a pause in seconds, default 60
+
+This retries after 0.5, 5, 10, 20, 40 and 60 seconds. Backoff is off unless a
+check sets `backoff:`. It only spaces out retries, so it does nothing while
+the check's `retries` (its own, or the global one it inherits) is 0. Keep the total
+below `check_every`, or the next round starts while the last one still waits.
+
 ## Notifiers
 
 A list of available notifiers:
